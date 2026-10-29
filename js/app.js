@@ -1,5 +1,9 @@
-// My Small Town — shared behavior: the bottom tab bar.
-// A page opts in with <nav class="tabbar" data-current="home"></nav>.
+// My Small Town — shared behavior: offline support and the bottom tab bar.
+// A page opts in to the tab bar with <nav class="tabbar" data-current="home"></nav>.
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
 
 const TABS = [
   {
