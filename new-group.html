@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Start a new group · My Small Town</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  [hidden] { display: none !important; }
+  .preview { border: 2.5px solid var(--ink); border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; }
+  .preview .sky { height: 120px; background: var(--sky-tint); position: relative; }
+  .preview .sun { position: absolute; right: 34px; top: 22px; width: 34px; height: 34px; border-radius: 17px; background: var(--accent); }
+  .preview .cloud { position: absolute; left: 40px; top: 30px; width: 60px; height: 18px; border-radius: 9px; background: var(--surface); }
+  .preview .hill { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; background: var(--mint-tint); }
+  .preview .sign { position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; max-width: 280px; }
+  .preview .board { background: #C98B55; border: 2.5px solid var(--ink); border-radius: 8px; padding: 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 1px; max-width: 280px; }
+  .preview .welcome { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #3B2414; }
+  .preview .town { font-family: var(--font-display); font-size: 20px; font-weight: 800; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+  .preview .posts { display: flex; gap: 40px; }
+  .preview .posts div { width: 6px; height: 26px; background: #7A4E2D; border: 1.5px solid var(--ink); border-top: 0; }
+  .preview .meadow { height: 46px; background: var(--mint); display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .preview .meadow div { width: 6px; height: 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header app-header--back">
+    <a class="icon-btn" href="groups.html" aria-label="Back to your groups">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <h1 class="page-title page-title--sm">Start a new group</h1>
+  </header>
+
+  <form id="new-group" class="app-main" style="gap: 18px; padding-top: 8px">
+    <div class="field">
+      <label class="form-title" for="group-name">Group name</label>
+      <input class="input" id="group-name" type="text" maxlength="40" autocomplete="off" required>
+    </div>
+
+    <div class="preview" role="img" aria-label="Preview of your town">
+      <div class="sky">
+        <div class="sun"></div>
+        <div class="cloud"></div>
+        <div class="hill"></div>
+        <div class="sign">
+          <div class="board">
+            <span class="welcome">Welcome to</span>
+            <span class="town" id="town-preview">Your town</span>
+          </div>
+          <div class="posts"><div></div><div></div></div>
+        </div>
+      </div>
+      <div class="meadow"><div class="bg-pink"></div><div class="bg-accent"></div><div class="bg-white"></div></div>
+    </div>
+    <p class="note center" style="margin-top: -6px">Your town starts as an empty meadow. The first home goes up after your first week of thank-yous.</p>
+
+    <div class="card" style="padding: 14px 16px; gap: 12px">
+      <div class="checkbox-row">
+        <input id="same-name" type="checkbox" checked>
+        <label for="same-name" style="font-weight: 600">Name the town after the group</label>
+      </div>
+      <div class="field" id="town-field" hidden>
+        <label for="town-name" style="font-size: 15px; font-weight: 700">Town name</label>
+        <input class="input input--sm" id="town-name" type="text" maxlength="40" placeholder="Name your town" autocomplete="off">
+      </div>
+      <span class="note">You can rename the town later from the Town screen.</span>
+    </div>
+
+    <div class="stack stack-8" style="margin-top: auto">
+      <button type="submit" class="btn">Create group</button>
+      <span class="note center">Next, you'll get an invite link to send to people.</span>
+    </div>
+  </form>
+</div>
+<script>
+  const groupName = document.getElementById('group-name');
+  const sameName = document.getElementById('same-name');
+  const townField = document.getElementById('town-field');
+  const townName = document.getElementById('town-name');
+  const preview = document.getElementById('town-preview');
+
+  function update() {
+    townField.hidden = sameName.checked;
+    const raw = (sameName.checked ? groupName.value : townName.value).trim();
+    preview.textContent = raw || 'Your town';
+  }
+
+  [groupName, townName].forEach((el) => el.addEventListener('input', update));
+  sameName.addEventListener('change', update);
+  update();
+
+  document.getElementById('new-group').addEventListener('submit', (e) => {
+    e.preventDefault();
+    window.location.href = 'groups.html';
+  });
+</script>
+</body>
+</html>

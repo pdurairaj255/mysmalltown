@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sunday recap · My Small Town</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  [hidden] { display: none !important; }
+  .past { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .past button { border: 0; padding: 0; background: transparent; cursor: pointer; display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; }
+  .past svg { width: 100%; height: auto; display: block; border-radius: 12px; border: 2px solid var(--ink); box-sizing: border-box; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <span class="eyebrow">The Reyes Family · Sunday, Oct 25</span>
+    <h1 class="page-title">Your town this week</h1>
+  </header>
+
+  <main class="app-main app-main--tight">
+    <div class="segmented" role="group" aria-label="Choose which week to show">
+      <button type="button" data-view="before" aria-pressed="false">Last Sunday · Oct 18</button>
+      <button type="button" data-view="after" aria-pressed="true">This Sunday · Oct 25</button>
+    </div>
+
+    <div class="scene">
+      <svg data-scene="before" hidden viewBox="0 0 350 260" role="img" aria-label="Reyes Town on October 18: two homes, two homes on the hill, a community center, and an empty schoolhouse foundation with a crane">
+        <rect x="0" y="0" width="350" height="260" fill="#B5E0FF"/>
+        <circle class="a-fill" cx="300" cy="48" r="20"/>
+        <ellipse cx="70" cy="45" rx="26" ry="11" fill="#FFFFFF"/>
+        <ellipse cx="92" cy="40" rx="18" ry="12" fill="#FFFFFF"/>
+        <ellipse cx="220" cy="30" rx="22" ry="9" fill="#FFFFFF"/>
+        <path d="M0 165 Q80 125 175 150 Q260 172 350 140 L350 260 L0 260 Z" fill="#A8F0CF"/>
+        <rect x="222" y="140" width="28" height="22" fill="#9B7BFF"/>
+        <polygon points="217,142 236,125 255,142" fill="#221A47"/>
+        <rect x="230" y="147" width="8" height="8" fill="#FFFFFF"/>
+        <rect class="a-fill" x="268" y="140" width="30" height="24"/>
+        <polygon points="263,142 283,124 303,142" fill="#221A47"/>
+        <rect x="276" y="148" width="8" height="8" fill="#FFFFFF"/>
+        <rect x="312" y="138" width="4" height="12" fill="#7A4E2D"/>
+        <circle cx="314" cy="132" r="11" fill="#1E9E6E"/>
+        <rect x="86" y="146" width="66" height="5" fill="#8F86B5"/>
+        <rect x="88" y="106" width="62" height="40" fill="none" stroke="#221A47" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="84,107 119,86 154,107" fill="none" stroke="#221A47" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="168" y1="150" x2="168" y2="60" stroke="#FF7A59" stroke-width="3"/>
+        <line x1="132" y1="62" x2="194" y2="62" stroke="#FF7A59" stroke-width="3"/>
+        <line x1="142" y1="62" x2="142" y2="90" stroke="#221A47" stroke-width="1.5"/>
+        <path d="M0 205 Q110 180 210 200 Q290 214 350 196 L350 260 L0 260 Z" fill="#3DD49A"/>
+        <path d="M215 262 C205 235 175 225 182 200 C186 186 200 178 196 165" stroke="#FFE98F" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <rect x="62" y="158" width="7" height="14" fill="#221A47"/>
+        <rect x="26" y="178" width="46" height="36" fill="#FF7A59"/>
+        <polygon points="20,180 49,154 78,180" fill="#221A47"/>
+        <rect x="43" y="196" width="12" height="18" fill="#FFE98F"/>
+        <rect x="31" y="186" width="9" height="9" fill="#FFFFFF"/>
+        <rect x="58" y="186" width="9" height="9" fill="#FFFFFF"/>
+        <rect x="86" y="190" width="38" height="28" fill="#FF7EB6"/>
+        <polygon points="80,192 105,170 130,192" fill="#221A47"/>
+        <rect x="99" y="204" width="10" height="14" fill="#221A47"/>
+        <rect x="89" y="197" width="7" height="7" fill="#FFFFFF"/>
+        <rect x="113" y="197" width="7" height="7" fill="#FFFFFF"/>
+        <rect x="262" y="192" width="50" height="32" fill="#4FB7FF"/>
+        <rect x="258" y="186" width="58" height="7" fill="#221A47"/>
+        <rect x="266" y="199" width="42" height="7" fill="#FF7A59"/>
+        <rect x="281" y="210" width="12" height="14" fill="#221A47"/>
+        <circle cx="86" cy="232" r="4.5" fill="#C68A5B"/>
+        <rect x="81.5" y="237" width="9" height="13" rx="3" fill="#4FB7FF"/>
+      </svg>
+      <svg data-scene="after" viewBox="0 0 350 260" role="img" aria-label="Reyes Town on October 25: the schoolhouse walls are up, four streetlights glow along the road, two new trees line it, flowers bloom by the first home, and a traveler walks into town. New things are marked with sparkles.">
+        <rect x="0" y="0" width="350" height="260" fill="#B5E0FF"/>
+        <circle class="a-fill" cx="300" cy="48" r="20"/>
+        <ellipse cx="70" cy="45" rx="26" ry="11" fill="#FFFFFF"/>
+        <ellipse cx="92" cy="40" rx="18" ry="12" fill="#FFFFFF"/>
+        <ellipse cx="220" cy="30" rx="22" ry="9" fill="#FFFFFF"/>
+        <path d="M0 165 Q80 125 175 150 Q260 172 350 140 L350 260 L0 260 Z" fill="#A8F0CF"/>
+        <rect x="222" y="140" width="28" height="22" fill="#9B7BFF"/>
+        <polygon points="217,142 236,125 255,142" fill="#221A47"/>
+        <rect x="230" y="147" width="8" height="8" fill="#FFFFFF"/>
+        <rect class="a-fill" x="268" y="140" width="30" height="24"/>
+        <polygon points="263,142 283,124 303,142" fill="#221A47"/>
+        <rect x="276" y="148" width="8" height="8" fill="#FFFFFF"/>
+        <rect x="312" y="138" width="4" height="12" fill="#7A4E2D"/>
+        <circle cx="314" cy="132" r="11" fill="#1E9E6E"/>
+        <rect x="86" y="146" width="66" height="5" fill="#8F86B5"/>
+        <rect x="88" y="106" width="62" height="40" fill="#FFC2B0" stroke="#221A47" stroke-width="1.5"/>
+        <rect x="96" y="114" width="10" height="10" fill="#FFFFFF" stroke="#221A47" stroke-width="1"/>
+        <rect x="132" y="114" width="10" height="10" fill="#FFFFFF" stroke="#221A47" stroke-width="1"/>
+        <rect x="113" y="128" width="12" height="18" fill="#221A47"/>
+        <polygon points="84,107 119,86 154,107" fill="none" stroke="#221A47" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="168" y1="150" x2="168" y2="60" stroke="#FF7A59" stroke-width="3"/>
+        <line x1="132" y1="62" x2="194" y2="62" stroke="#FF7A59" stroke-width="3"/>
+        <line x1="142" y1="62" x2="142" y2="80" stroke="#221A47" stroke-width="1.5"/>
+        <rect class="a-fill" x="133" y="80" width="18" height="4" stroke="#221A47" stroke-width="1"/>
+        <path d="M0 205 Q110 180 210 200 Q290 214 350 196 L350 260 L0 260 Z" fill="#3DD49A"/>
+        <path d="M215 262 C205 235 175 225 182 200 C186 186 200 178 196 165" stroke="#FFE98F" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <rect x="62" y="158" width="7" height="14" fill="#221A47"/>
+        <rect x="26" y="178" width="46" height="36" fill="#FF7A59"/>
+        <polygon points="20,180 49,154 78,180" fill="#221A47"/>
+        <rect x="43" y="196" width="12" height="18" fill="#FFE98F"/>
+        <rect x="31" y="186" width="9" height="9" fill="#FFFFFF"/>
+        <rect x="58" y="186" width="9" height="9" fill="#FFFFFF"/>
+        <rect x="86" y="190" width="38" height="28" fill="#FF7EB6"/>
+        <polygon points="80,192 105,170 130,192" fill="#221A47"/>
+        <rect x="99" y="204" width="10" height="14" fill="#221A47"/>
+        <rect x="89" y="197" width="7" height="7" fill="#FFFFFF"/>
+        <rect x="113" y="197" width="7" height="7" fill="#FFFFFF"/>
+        <rect x="262" y="192" width="50" height="32" fill="#4FB7FF"/>
+        <rect x="258" y="186" width="58" height="7" fill="#221A47"/>
+        <rect x="266" y="199" width="42" height="7" fill="#FF7A59"/>
+        <rect x="281" y="210" width="12" height="14" fill="#221A47"/>
+        <rect x="146" y="200" width="4" height="14" fill="#7A4E2D"/>
+        <circle cx="148" cy="194" r="12" fill="#1E9E6E"/>
+        <rect x="232" y="208" width="4" height="12" fill="#7A4E2D"/>
+        <circle cx="234" cy="203" r="10" fill="#1E9E6E"/>
+        <line x1="140" y1="258" x2="140" y2="240" stroke="#221A47" stroke-width="2"/><circle class="a-fill" cx="140" cy="238" r="3.5" stroke="#221A47" stroke-width="1"/>
+        <line x1="172" y1="222" x2="172" y2="204" stroke="#221A47" stroke-width="2"/><circle class="a-fill" cx="172" cy="202" r="3.5" stroke="#221A47" stroke-width="1"/>
+        <line x1="210" y1="196" x2="210" y2="178" stroke="#221A47" stroke-width="2"/><circle class="a-fill" cx="210" cy="176" r="3.5" stroke="#221A47" stroke-width="1"/>
+        <line x1="182" y1="168" x2="182" y2="150" stroke="#221A47" stroke-width="2"/><circle class="a-fill" cx="182" cy="148" r="3.5" stroke="#221A47" stroke-width="1"/>
+        <circle cx="24" cy="226" r="3.5" fill="#FF7EB6"/>
+        <circle class="a-fill" cx="34" cy="230" r="3.5"/>
+        <circle cx="46" cy="226" r="3.5" fill="#9B7BFF"/>
+        <circle cx="58" cy="230" r="3.5" fill="#FF7EB6"/>
+        <circle cx="86" cy="232" r="4.5" fill="#C68A5B"/>
+        <rect x="81.5" y="237" width="9" height="13" rx="3" fill="#4FB7FF"/>
+        <rect x="217" y="236" width="6" height="9" rx="2" fill="#7A4E2D"/>
+        <circle cx="226" cy="230" r="4.5" fill="#E8B48A"/>
+        <rect x="221.5" y="235" width="9" height="13" rx="3" fill="#FF7EB6"/>
+        <path class="a-fill" d="M162 92 L164 98 L170 100 L164 102 L162 108 L160 102 L154 100 L160 98 Z" stroke="#221A47" stroke-width="1"/>
+        <path class="a-fill" d="M128 176 L130 182 L136 184 L130 186 L128 192 L126 186 L120 184 L126 182 Z" stroke="#221A47" stroke-width="1"/>
+        <path class="a-fill" d="M250 194 L252 200 L258 202 L252 204 L250 210 L248 204 L242 202 L248 200 Z" stroke="#221A47" stroke-width="1"/>
+        <path class="a-fill" d="M241 222 L243 228 L249 230 L243 232 L241 238 L239 232 L233 230 L239 228 Z" stroke="#221A47" stroke-width="1"/>
+        <path class="a-fill" d="M14 210 L16 216 L22 218 L16 220 L14 226 L12 220 L6 218 L12 216 Z" stroke="#221A47" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <section class="card card--list" aria-label="What changed this week">
+      <div class="list-row"><div class="icon-tile bg-coral" aria-hidden="true"></div><div class="stack stack-2"><span class="item-title">The schoolhouse walls went up</span><span class="note">From Grandma Ruth's thank-you to Theo</span></div></div>
+      <div class="list-row"><div class="icon-tile bg-ink" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD23F" stroke-width="2.4" stroke-linecap="round"><path d="M12 22V11"/><circle cx="12" cy="7" r="4" fill="#FFD23F"/></svg></div><div class="stack stack-2"><span class="item-title">Four streetlights came on</span><span class="note">Grace, Luis, Maya and Grandma Ruth each stopped by 3+ times</span></div></div>
+      <div class="list-row"><div class="icon-tile bg-mint" aria-hidden="true"></div><div class="stack stack-2"><span class="item-title">Two trees grew along the road</span><span class="note">From Maya's and Theo's thank-yous</span></div></div>
+      <div class="list-row"><div class="icon-tile bg-pink" aria-hidden="true"></div><div class="stack stack-2"><span class="item-title">Flowers bloomed by the first home</span><span class="note">From Luis's and Grace's thank-yous</span></div></div>
+      <div class="list-row"><div class="icon-tile bg-violet" aria-hidden="true"></div><div class="stack stack-2"><span class="item-title">A traveler arrived in town</span><span class="note">From Grace's thank-you to a stranger</span></div></div>
+    </section>
+
+    <div class="row" style="gap: 10px">
+      <button type="button" class="btn btn--md">Save as image</button>
+      <button type="button" class="btn btn--md btn--outline">Send to family</button>
+    </div>
+
+    <section class="stack stack-10" aria-label="Past Sundays">
+      <h2 class="section-title">Past Sundays</h2>
+      <div class="past">
+        <button type="button" aria-label="Town on Oct 18">
+          <svg viewBox="0 0 80 60" aria-hidden="true">
+            <rect x="0" y="0" width="80" height="60" fill="#B5E0FF"/><rect x="0" y="46" width="80" height="14" fill="#3DD49A"/>
+            <rect x="6" y="34" width="14" height="12" fill="#FF7A59"/><polygon points="4,35 13,27 22,35" fill="#221A47"/>
+            <rect x="24" y="37" width="11" height="9" fill="#FF7EB6"/><polygon points="22,38 29.5,31 37,38" fill="#221A47"/>
+            <rect x="40" y="30" width="14" height="16" fill="none" stroke="#221A47" stroke-width="1" stroke-dasharray="2 2"/>
+            <rect x="58" y="36" width="16" height="10" fill="#4FB7FF"/><rect x="57" y="34" width="18" height="3" fill="#221A47"/>
+          </svg>
+          Oct 18
+        </button>
+        <button type="button" aria-label="Town on Oct 11">
+          <svg viewBox="0 0 80 60" aria-hidden="true">
+            <rect x="0" y="0" width="80" height="60" fill="#B5E0FF"/><rect x="0" y="46" width="80" height="14" fill="#3DD49A"/>
+            <rect x="6" y="34" width="14" height="12" fill="#FF7A59"/><polygon points="4,35 13,27 22,35" fill="#221A47"/>
+            <rect x="24" y="37" width="11" height="9" fill="#FF7EB6"/><polygon points="22,38 29.5,31 37,38" fill="#221A47"/>
+            <rect x="58" y="36" width="16" height="10" fill="none" stroke="#221A47" stroke-width="1" stroke-dasharray="2 2"/>
+          </svg>
+          Oct 11
+        </button>
+        <button type="button" aria-label="Town on Oct 4">
+          <svg viewBox="0 0 80 60" aria-hidden="true">
+            <rect x="0" y="0" width="80" height="60" fill="#B5E0FF"/><rect x="0" y="46" width="80" height="14" fill="#3DD49A"/>
+            <rect x="6" y="34" width="14" height="12" fill="#FF7A59"/><polygon points="4,35 13,27 22,35" fill="#221A47"/>
+            <rect x="24" y="37" width="11" height="9" fill="none" stroke="#221A47" stroke-width="1" stroke-dasharray="2 2"/>
+          </svg>
+          Oct 4
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" data-current="recap"></nav>
+</div>
+<script src="js/app.js"></script>
+<script>
+  const toggles = document.querySelectorAll('.segmented button');
+  toggles.forEach((btn) => btn.addEventListener('click', () => {
+    const view = btn.dataset.view;
+    toggles.forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+    // SVG elements have no .hidden property, so toggle the attribute directly
+    document.querySelectorAll('[data-scene]').forEach((s) => s.toggleAttribute('hidden', s.dataset.scene !== view));
+  }));
+</script>
+</body>
+</html>

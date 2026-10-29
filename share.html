@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Share a thank-you · My Small Town</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .people { border: 0; margin: 0; padding: 0; }
+  .people legend { padding: 0; margin-bottom: 12px; }
+  .people-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .person {
+    min-height: 92px; padding: 10px 6px; border-radius: 16px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--line);
+  }
+  .person[aria-pressed="true"] { background: var(--tint); border: 2.5px solid var(--ink); }
+  .person .name { font-size: 13px; font-weight: 600; line-height: 1.2; text-align: center; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header app-header--back">
+    <a class="icon-btn" href="index.html" aria-label="Back to group">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <div class="stack stack-1">
+      <h1 class="page-title page-title--sm">Today's thank-you</h1>
+      <span class="subtitle">The Reyes Family · Sunday, Oct 25</span>
+    </div>
+  </header>
+
+  <form id="share-form" class="app-main app-main--loose" style="padding-top: 10px" action="index.html">
+    <fieldset class="people">
+      <legend class="form-title">Who are you thanking?</legend>
+      <div class="people-grid">
+        <button type="button" class="person" data-name="Grace" style="--tint: var(--mint-tint)"><span class="avatar avatar--40 bg-mint">G</span><span class="name">Grace</span></button>
+        <button type="button" class="person" data-name="Maya" style="--tint: var(--violet-tint)"><span class="avatar avatar--40 bg-violet">M</span><span class="name">Maya</span></button>
+        <button type="button" class="person" data-name="Theo" style="--tint: var(--sky-tint)"><span class="avatar avatar--40 bg-sky">T</span><span class="name">Theo</span></button>
+        <button type="button" class="person" data-name="Grandma Ruth" style="--tint: var(--coral-tint)"><span class="avatar avatar--40 bg-coral">R</span><span class="name">Grandma Ruth</span></button>
+        <button type="button" class="person" data-name="Aunt Priya" style="--tint: var(--pink-tint)"><span class="avatar avatar--40 bg-pink">P</span><span class="name">Aunt Priya</span></button>
+        <button type="button" class="person" data-name="" aria-pressed="true" style="--tint: var(--sun-tint)">
+          <span class="avatar avatar--40 bg-white"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span class="name">Someone else</span>
+        </button>
+      </div>
+    </fieldset>
+
+    <div class="field" data-when="other">
+      <label class="form-title" for="who">Who was it?</label>
+      <textarea class="textarea textarea--line" id="who" rows="1" placeholder="A name or a short description"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="form-title" for="thanks-text">What did <span id="chosen">they</span> do?</label>
+      <textarea class="textarea" id="thanks-text" rows="5" placeholder="Write your thank-you"></textarea>
+    </div>
+
+    <div class="checkbox-row" data-when="member" hidden>
+      <input id="notify" type="checkbox" checked>
+      <label for="notify">Let <span id="chosen-notify"></span> know</label>
+    </div>
+    <p class="note" data-when="other" style="font-size: 14px; line-height: 1.5">Thank-yous to people outside the group bring visitors to your town.</p>
+
+    <div class="stack stack-10" style="margin-top: auto">
+      <button type="submit" class="btn">Share thank-you</button>
+      <p class="note center">One thank-you per person each day.</p>
+    </div>
+  </form>
+</div>
+<script>
+  const people = document.querySelectorAll('.person');
+  const chosen = document.getElementById('chosen');
+  const chosenNotify = document.getElementById('chosen-notify');
+
+  function pick(btn) {
+    people.forEach((p) => p.setAttribute('aria-pressed', p === btn ? 'true' : 'false'));
+    const name = btn.dataset.name;
+    const isOther = !name;
+    chosen.textContent = isOther ? 'they' : name;
+    chosenNotify.textContent = name;
+    document.querySelectorAll('[data-when="other"]').forEach((el) => { el.hidden = !isOther; });
+    document.querySelectorAll('[data-when="member"]').forEach((el) => { el.hidden = isOther; });
+  }
+
+  people.forEach((btn) => btn.addEventListener('click', () => pick(btn)));
+  pick(document.querySelector('.person[aria-pressed="true"]'));
+
+  document.getElementById('share-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    window.location.href = 'index.html';
+  });
+</script>
+</body>
+</html>
