@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · My Small Town</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F3F0FF">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Small Town">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  .hero { border-radius: 24px; overflow: hidden; border: 2.5px solid var(--ink); line-height: 0; }
+  .hero img { width: 100%; height: 160px; object-fit: cover; display: block; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <span class="brand">My Small Town</span>
+    <h1 class="page-title" id="title">Welcome</h1>
+  </header>
+
+  <main class="app-main app-main--loose" style="padding-top: 8px">
+    <div class="hero"><img src="icons/icon-512.png" alt=""></div>
+
+    <form id="email-step" class="stack stack-14" novalidate>
+      <p class="body-text" style="color: var(--ink-2)">Share one thank-you a day with the people you love, and watch your town grow together.</p>
+      <div class="field">
+        <label class="form-title" for="email">Your email</label>
+        <input class="input" id="email" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com">
+      </div>
+      <p class="form-error" role="alert" hidden></p>
+      <button type="submit" class="btn">Email me a sign-in code</button>
+      <p class="note center">No password needed. We'll email you a code each time you sign in on a new device.</p>
+    </form>
+
+    <form id="code-step" class="stack stack-14" novalidate hidden>
+      <p class="body-text" style="color: var(--ink-2)">We sent a code to <strong id="sent-to"></strong>. Enter it below, or tap the link in the email.</p>
+      <div class="field">
+        <label class="form-title" for="code">Sign-in code</label>
+        <input class="input" id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" required style="letter-spacing: 0.2em">
+      </div>
+      <p class="form-error" role="alert" hidden></p>
+      <button type="submit" class="btn">Sign in</button>
+      <button type="button" class="link-btn" id="use-other">Use a different email</button>
+    </form>
+
+    <form id="profile-step" class="stack stack-14" novalidate hidden>
+      <p class="body-text" style="color: var(--ink-2)">This is how you'll appear to your group and in your town.</p>
+      <div class="field">
+        <label class="form-title" for="display-name">Your name</label>
+        <input class="input" id="display-name" type="text" maxlength="40" autocomplete="given-name" required placeholder="What your family calls you">
+      </div>
+      <fieldset class="field" style="border: 0; margin: 0; padding: 0">
+        <legend class="form-title" style="padding: 0; margin-bottom: 8px">Your color</legend>
+        <div class="swatches" id="colors"></div>
+      </fieldset>
+      <p class="form-error" role="alert" hidden></p>
+      <button type="submit" class="btn">Continue</button>
+    </form>
+  </main>
+</div>
+<script src="js/app.js"></script>
+<script type="module">
+  import { api, isDemo, PEOPLE_COLORS, safeNext } from './js/ui.js';
+  import { esc } from './js/util.js';
+
+  const params = new URLSearchParams(location.search);
+  const next = safeNext(params.get('next'));
+  const steps = { email: document.getElementById('email-step'), code: document.getElementById('code-step'), profile: document.getElementById('profile-step') };
+  const title = document.getElementById('title');
+  let email = '';
+
+  function show(step) {
+    Object.entries(steps).forEach(([k, el]) => { el.hidden = k !== step; });
+    title.textContent = { email: 'Welcome', code: 'Check your email', profile: 'About you' }[step];
+    steps[step].querySelector('input')?.focus();
+  }
+  function setError(form, message) {
+    const el = form.querySelector('.form-error');
+    el.textContent = message || '';
+    el.hidden = !message;
+  }
+  async function busy(form, fn) {
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    setError(form, '');
+    try { await fn(); } catch (e) { setError(form, e.message); } finally { btn.disabled = false; }
+  }
+
+  document.getElementById('colors').innerHTML = PEOPLE_COLORS.map((c, i) => `
+    <label class="swatch"><input type="radio" name="color" value="${c.hex}"${i === 0 ? ' checked' : ''}><span style="background: ${c.hex}"></span><span class="sr-only">${esc(c.name)}</span></label>`).join('');
+
+  async function afterSignIn() {
+    const user = await api.getUser();
+    const profile = await api.getProfile(user.id);
+    if (profile && params.get('step') !== 'profile') { location.replace(next); return; }
+    if (profile) {
+      document.getElementById('display-name').value = profile.display_name;
+      const radio = document.querySelector(`input[name=color][value="${profile.color}"]`);
+      if (radio) radio.checked = true;
+    }
+    show('profile');
+  }
+
+  if (isDemo) {
+    steps.email.querySelector('button[type=submit]').textContent = 'Continue';
+    steps.email.querySelector('.note').textContent = 'Demo mode: no email is sent, and everything stays on this device.';
+  }
+
+  steps.email.addEventListener('submit', (e) => {
+    e.preventDefault();
+    busy(steps.email, async () => {
+      email = document.getElementById('email').value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Please enter a valid email address.');
+      if (isDemo) {
+        await api.verifyCode(email);
+        await afterSignIn();
+        return;
+      }
+      await api.sendCode(email, new URL(`signin.html?next=${encodeURIComponent(next)}`, location.href).href);
+      document.getElementById('sent-to').textContent = email;
+      show('code');
+    });
+  });
+
+  steps.code.addEventListener('submit', (e) => {
+    e.preventDefault();
+    busy(steps.code, async () => {
+      const code = document.getElementById('code').value.replace(/\s/g, '');
+      if (!code) throw new Error('Enter the code from the email.');
+      await api.verifyCode(email, code);
+      await afterSignIn();
+    });
+  });
+
+  document.getElementById('use-other').addEventListener('click', () => show('email'));
+
+  steps.profile.addEventListener('submit', (e) => {
+    e.preventDefault();
+    busy(steps.profile, async () => {
+      const display_name = document.getElementById('display-name').value.trim();
+      if (!display_name) throw new Error('Please enter your name.');
+      const color = document.querySelector('input[name=color]:checked').value;
+      const user = await api.getUser();
+      await api.saveProfile(user.id, { display_name, color });
+      location.replace(next);
+    });
+  });
+
+  // Already signed in (or arriving from the email link)? Skip ahead.
+  if (await api.getUser()) await afterSignIn();
+  else show('email');
+</script>
+</body>
+</html>

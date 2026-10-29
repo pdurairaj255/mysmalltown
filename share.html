@@ -25,8 +25,7 @@
     background: var(--surface); border: 1px solid var(--line);
   }
   .person[aria-pressed="true"] { background: var(--tint); border: 2.5px solid var(--ink); }
-  .person .name { font-size: 13px; font-weight: 600; line-height: 1.2; text-align: center; }
-  [hidden] { display: none !important; }
+  .person .name { font-size: 13px; font-weight: 600; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -37,71 +36,113 @@
     </a>
     <div class="stack stack-1">
       <h1 class="page-title page-title--sm">Today's thank-you</h1>
-      <span class="subtitle">The Reyes Family · Sunday, Oct 25</span>
+      <span class="subtitle" id="subtitle"></span>
     </div>
   </header>
 
-  <form id="share-form" class="app-main app-main--loose" style="padding-top: 10px" action="index.html">
-    <fieldset class="people">
-      <legend class="form-title">Who are you thanking?</legend>
-      <div class="people-grid">
-        <button type="button" class="person" data-name="Grace" style="--tint: var(--mint-tint)"><span class="avatar avatar--40 bg-mint">G</span><span class="name">Grace</span></button>
-        <button type="button" class="person" data-name="Maya" style="--tint: var(--violet-tint)"><span class="avatar avatar--40 bg-violet">M</span><span class="name">Maya</span></button>
-        <button type="button" class="person" data-name="Theo" style="--tint: var(--sky-tint)"><span class="avatar avatar--40 bg-sky">T</span><span class="name">Theo</span></button>
-        <button type="button" class="person" data-name="Grandma Ruth" style="--tint: var(--coral-tint)"><span class="avatar avatar--40 bg-coral">R</span><span class="name">Grandma Ruth</span></button>
-        <button type="button" class="person" data-name="Aunt Priya" style="--tint: var(--pink-tint)"><span class="avatar avatar--40 bg-pink">P</span><span class="name">Aunt Priya</span></button>
-        <button type="button" class="person" data-name="" aria-pressed="true" style="--tint: var(--sun-tint)">
-          <span class="avatar avatar--40 bg-white"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
-          <span class="name">Someone else</span>
-        </button>
-      </div>
-    </fieldset>
-
-    <div class="field" data-when="other">
-      <label class="form-title" for="who">Who was it?</label>
-      <textarea class="textarea textarea--line" id="who" rows="1" placeholder="A name or a short description"></textarea>
-    </div>
-
-    <div class="field">
-      <label class="form-title" for="thanks-text">What did <span id="chosen">they</span> do?</label>
-      <textarea class="textarea" id="thanks-text" rows="5" placeholder="Write your thank-you"></textarea>
-    </div>
-
-    <div class="checkbox-row" data-when="member" hidden>
-      <input id="notify" type="checkbox" checked>
-      <label for="notify">Let <span id="chosen-notify"></span> know</label>
-    </div>
-    <p class="note" data-when="other" style="font-size: 14px; line-height: 1.5">Thank-yous to people outside the group bring visitors to your town.</p>
-
-    <div class="stack stack-10" style="margin-top: auto">
-      <button type="submit" class="btn">Share thank-you</button>
-      <p class="note center">One thank-you per person each day.</p>
-    </div>
-  </form>
+  <div id="main" class="app-main"><p class="note">Loading…</p></div>
 </div>
 <script src="js/app.js"></script>
-<script>
-  const people = document.querySelectorAll('.person');
-  const chosen = document.getElementById('chosen');
-  const chosenNotify = document.getElementById('chosen-notify');
+<script type="module">
+  import { boot, api, avatar, tintOf, showError } from './js/ui.js';
+  import { esc, longDate } from './js/util.js';
 
-  function pick(btn) {
-    people.forEach((p) => p.setAttribute('aria-pressed', p === btn ? 'true' : 'false'));
-    const name = btn.dataset.name;
-    const isOther = !name;
-    chosen.textContent = isOther ? 'they' : name;
-    chosenNotify.textContent = name;
-    document.querySelectorAll('[data-when="other"]').forEach((el) => { el.hidden = !isOther; });
-    document.querySelectorAll('[data-when="member"]').forEach((el) => { el.hidden = isOther; });
+  const main = document.getElementById('main');
+  try {
+    const { group, data, me, today } = await boot();
+    document.getElementById('subtitle').textContent = `${group.name} · ${longDate(today)}`;
+    const mine = data.thanks.find((t) => t.author_id === me.user_id && t.day === today);
+
+    if (mine) {
+      main.innerHTML = `
+        <div class="ink-card ink-card--lg">
+          <h2 class="form-title">You've shared today's thank-you</h2>
+          <p class="muted" style="font-size: 14px; line-height: 1.5">You thanked <strong style="color: var(--on-ink)">${esc(mine.recipient_name)}</strong>:</p>
+          <p style="font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere">${esc(mine.body)}</p>
+        </div>
+        <p class="note center">One thank-you per person each day. Come back tomorrow for the next one.</p>
+        <a class="btn" href="index.html">Back to ${esc(group.name)}</a>`;
+    } else {
+      const others = data.members.filter((m) => m.user_id !== me.user_id);
+      main.outerHTML = `
+        <form id="main" class="app-main app-main--loose" style="padding-top: 10px" novalidate>
+          <fieldset class="people">
+            <legend class="form-title">Who are you thanking?</legend>
+            <div class="people-grid">
+              ${others.map((m) => `
+                <button type="button" class="person" data-id="${esc(m.user_id)}" data-name="${esc(m.name)}" aria-pressed="false" style="--tint: ${tintOf(m.color)}">
+                  ${avatar(m, 'avatar--40')}<span class="name">${esc(m.name)}</span>
+                </button>`).join('')}
+              <button type="button" class="person" data-id="" data-name="" aria-pressed="false" style="--tint: var(--sun-tint)">
+                <span class="avatar avatar--40 bg-white"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+                <span class="name">Someone else</span>
+              </button>
+            </div>
+          </fieldset>
+
+          <div class="field" data-when="other" hidden>
+            <label class="form-title" for="who">Who was it?</label>
+            <textarea class="textarea textarea--line" id="who" rows="1" maxlength="80" placeholder="A name or a short description"></textarea>
+          </div>
+
+          <div class="field">
+            <label class="form-title" for="thanks-text">What did <span id="chosen">they</span> do?</label>
+            <textarea class="textarea" id="thanks-text" rows="5" maxlength="1000" placeholder="Write your thank-you"></textarea>
+          </div>
+
+          <p class="note" data-when="other" hidden style="font-size: 14px; line-height: 1.5">Thank-yous to people outside the group bring visitors to your town.</p>
+          <p class="form-error" role="alert" hidden></p>
+
+          <div class="stack stack-10" style="margin-top: auto">
+            <button type="submit" class="btn">Share thank-you</button>
+            <p class="note center">One thank-you per person each day.</p>
+          </div>
+        </form>`;
+
+      const form = document.getElementById('main');
+      const people = form.querySelectorAll('.person');
+      const error = form.querySelector('.form-error');
+      let picked = null;
+
+      function pick(btn) {
+        picked = btn;
+        people.forEach((p) => p.setAttribute('aria-pressed', p === btn ? 'true' : 'false'));
+        const isOther = !btn.dataset.id;
+        document.getElementById('chosen').textContent = isOther ? 'they' : btn.dataset.name;
+        form.querySelectorAll('[data-when="other"]').forEach((el) => { el.hidden = !isOther; });
+      }
+      people.forEach((btn) => btn.addEventListener('click', () => pick(btn)));
+      if (!others.length) pick(people[0]);
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const body = document.getElementById('thanks-text').value.trim();
+        const outside = document.getElementById('who').value.trim();
+        const fail = (msg) => { error.textContent = msg; error.hidden = false; };
+        if (!picked) return fail('Choose who you are thanking.');
+        if (!picked.dataset.id && !outside) return fail('Tell us who it was.');
+        if (!body) return fail('Write a few words about what they did.');
+        const btn = form.querySelector('button[type=submit]');
+        btn.disabled = true;
+        error.hidden = true;
+        try {
+          await api.shareThanks({
+            group_id: group.id,
+            recipient_id: picked.dataset.id || null,
+            recipient_name: picked.dataset.id ? picked.dataset.name : outside,
+            body,
+            day: today
+          });
+          location.href = 'index.html';
+        } catch (err) {
+          fail(err.message);
+          btn.disabled = false;
+        }
+      });
+    }
+  } catch (e) {
+    showError(main, e.message);
   }
-
-  people.forEach((btn) => btn.addEventListener('click', () => pick(btn)));
-  pick(document.querySelector('.person[aria-pressed="true"]'));
-
-  document.getElementById('share-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    window.location.href = 'index.html';
-  });
 </script>
 </body>
 </html>

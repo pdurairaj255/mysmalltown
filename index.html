@@ -18,7 +18,8 @@
 <style>
   .town-card { background: var(--ink); color: var(--on-ink); border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; }
   .town-card:hover { color: var(--on-ink); }
-  .town-card svg.art { display: block; width: 100%; height: auto; }
+  .town-card > svg { display: block; width: 100%; height: auto; }
+  .town-card .caption svg { flex-shrink: 0; }
   .town-card .caption { padding: 14px 18px 16px; }
   .town-card .headline { font-family: var(--font-display); font-size: 19px; font-weight: 700; }
   .recap-banner { background: var(--pink); border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; color: var(--ink); text-decoration: none; }
@@ -28,155 +29,109 @@
   .thanks .who { margin: 0; font-size: 14px; color: var(--ink-2); min-width: 0; }
   .thanks .who strong { color: var(--ink); }
   .thanks .badge { align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; background: var(--surface); border-radius: 6px; padding: 3px 7px; }
+  .thanks .body-text { white-space: pre-line; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
 <div class="app">
   <header class="app-header app-header--row">
     <div class="stack stack-2">
-      <span class="eyebrow">Your group</span>
-      <h1 class="page-title">The Reyes Family</h1>
+      <span class="eyebrow" id="eyebrow">Your group</span>
+      <h1 class="page-title" id="title">My Small Town</h1>
     </div>
-    <a class="icon-btn" href="groups.html" aria-label="Switch group">
+    <a class="icon-btn" href="groups.html" aria-label="Switch group" id="switch" hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
     </a>
   </header>
 
-  <main class="app-main" style="padding-top: 0">
-    <a class="town-card" href="town.html" aria-label="Visit Reyes Town">
-      <svg class="art" viewBox="0 30 350 230" aria-hidden="true">
-        <rect x="0" y="0" width="350" height="260" fill="#B5E0FF"/>
-        <circle class="a-fill" cx="300" cy="58" r="18"/>
-        <ellipse cx="70" cy="55" rx="26" ry="11" fill="#FFFFFF"/>
-        <ellipse cx="92" cy="50" rx="18" ry="12" fill="#FFFFFF"/>
-        <path d="M0 165 Q80 125 175 150 Q260 172 350 140 L350 260 L0 260 Z" fill="#A8F0CF"/>
-        <rect x="222" y="140" width="28" height="22" fill="#9B7BFF"/>
-        <polygon points="217,142 236,125 255,142" fill="#221A47"/>
-        <rect class="a-fill" x="268" y="140" width="30" height="24"/>
-        <polygon points="263,142 283,124 303,142" fill="#221A47"/>
-        <circle cx="314" cy="132" r="11" fill="#1E9E6E"/>
-        <rect x="88" y="128" width="62" height="22" fill="#FFC2B0" stroke="#221A47" stroke-width="1.5"/>
-        <rect x="88" y="106" width="62" height="22" fill="none" stroke="#221A47" stroke-width="1.5" stroke-dasharray="4 3"/>
-        <polygon points="84,107 119,86 154,107" fill="none" stroke="#221A47" stroke-width="1.5" stroke-dasharray="4 3"/>
-        <rect x="113" y="136" width="12" height="14" fill="#221A47"/>
-        <line x1="168" y1="150" x2="168" y2="64" stroke="#FF7A59" stroke-width="3"/>
-        <line x1="132" y1="66" x2="194" y2="66" stroke="#FF7A59" stroke-width="3"/>
-        <line x1="142" y1="66" x2="142" y2="90" stroke="#221A47" stroke-width="1.5"/>
-        <path d="M0 205 Q110 180 210 200 Q290 214 350 196 L350 260 L0 260 Z" fill="#3DD49A"/>
-        <path d="M215 262 C205 235 175 225 182 200 C186 186 200 178 196 165" stroke="#FFE98F" stroke-width="12" stroke-linecap="round" fill="none"/>
-        <rect x="26" y="178" width="46" height="36" fill="#FF7A59"/>
-        <polygon points="20,180 49,154 78,180" fill="#221A47"/>
-        <rect x="43" y="196" width="12" height="18" fill="#FFE98F"/>
-        <rect x="86" y="190" width="38" height="28" fill="#FF7EB6"/>
-        <polygon points="80,192 105,170 130,192" fill="#221A47"/>
-        <rect x="262" y="192" width="50" height="32" fill="#4FB7FF"/>
-        <rect x="258" y="186" width="58" height="7" fill="#221A47"/>
-        <rect x="266" y="199" width="42" height="7" fill="#FF7A59"/>
-        <circle cx="148" cy="194" r="12" fill="#1E9E6E"/>
-        <circle cx="234" cy="203" r="10" fill="#1E9E6E"/>
-        <line x1="140" y1="258" x2="140" y2="240" stroke="#221A47" stroke-width="2"/><circle class="a-fill" cx="140" cy="238" r="3.5" stroke="#221A47" stroke-width="1"/>
-        <line x1="172" y1="222" x2="172" y2="204" stroke="#221A47" stroke-width="2"/><circle class="a-fill" cx="172" cy="202" r="3.5" stroke="#221A47" stroke-width="1"/>
-        <line x1="210" y1="196" x2="210" y2="178" stroke="#221A47" stroke-width="2"/><circle class="a-fill" cx="210" cy="176" r="3.5" stroke="#221A47" stroke-width="1"/>
-        <line x1="182" y1="168" x2="182" y2="150" stroke="#221A47" stroke-width="2"/><circle class="a-fill" cx="182" cy="148" r="3.5" stroke="#221A47" stroke-width="1"/>
-        <circle cx="160" cy="224" r="4.5" fill="#7A4E2D"/>
-        <rect x="155.5" y="229" width="9" height="13" rx="3" fill="#4FB7FF" stroke="#221A47" stroke-width="0.8"/>
-        <circle cx="192" cy="228" r="4.5" fill="#E8B48A"/>
-        <rect x="187.5" y="233" width="9" height="13" rx="3" fill="#FFD23F" stroke="#221A47" stroke-width="0.8"/>
-        <line x1="164" y1="232" x2="188" y2="236" stroke="#A0693F" stroke-width="4" stroke-linecap="round"/>
-        <circle cx="100" cy="88" r="4.5" fill="#C68A5B"/>
-        <rect x="95.5" y="93" width="9" height="13" rx="3" fill="#3DD49A" stroke="#221A47" stroke-width="0.8"/>
-        <line x1="104" y1="97" x2="110" y2="91" stroke="#221A47" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="250" cy="224" r="4.5" fill="#E8B48A"/>
-        <rect x="245.5" y="229" width="9" height="13" rx="3" fill="#9B7BFF" stroke="#221A47" stroke-width="0.8"/>
-        <circle cx="300" cy="230" r="4.5" fill="#F1C9A5"/>
-        <rect x="295.5" y="235" width="9" height="13" rx="3" fill="#FF7A59" stroke="#221A47" stroke-width="0.8"/>
-        <rect x="125" y="224" width="16" height="3" fill="#7A4E2D"/>
-        <circle cx="133" cy="212" r="4" fill="#C68A5B"/>
-        <rect x="129" y="216" width="8" height="8" rx="3" fill="#FF7EB6" stroke="#221A47" stroke-width="0.8"/>
-      </svg>
-      <div class="caption row">
-        <div class="stack stack-2 grow">
-          <span style="font-size: 13px; color: var(--on-ink-muted)">Reyes Town · Week 12</span>
-          <span class="headline">The schoolhouse walls went up</span>
-        </div>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" class="a-stroke" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-      </div>
-    </a>
-
-    <a class="recap-banner" href="recap.html">
-      <div class="mosaic" aria-hidden="true">
-        <div class="bg-accent"></div><div class="bg-sky"></div><div class="bg-mint"></div><div class="bg-ink"></div>
-      </div>
-      <div class="stack stack-1 grow">
-        <span style="font-size: 16px; font-weight: 700">Sunday recap is ready</span>
-        <span style="font-size: 13px">See how Reyes Town changed this week</span>
-      </div>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-    </a>
-
-    <a class="btn" href="share.html">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-      Share today's thank-you
-    </a>
-
-    <section class="stack stack-12" aria-label="This week's thank-yous">
-      <h2 class="section-title">This week's thank-yous</h2>
-
-      <article class="thanks bg-mint-tint">
-        <div class="row" style="gap: 10px">
-          <div class="avatar bg-mint" aria-hidden="true">G</div>
-          <div class="stack stack-4">
-            <p class="who"><strong>Grace</strong> thanked <strong>a stranger at the grocery store</strong> · Today</p>
-            <span class="badge">Outside the group</span>
-          </div>
-        </div>
-        <p class="body-text">My bag of oranges split open in the parking lot. A woman I'd never met helped me pick up every one, then walked them to my car.</p>
-      </article>
-
-      <article class="thanks bg-coral-tint">
-        <div class="row" style="gap: 10px">
-          <div class="avatar bg-coral" aria-hidden="true">R</div>
-          <p class="who"><strong>Grandma Ruth</strong> thanked <strong>Theo</strong> · Sat</p>
-        </div>
-        <p class="body-text">Theo called me just to tell me about his science fair project. It made my whole week.</p>
-      </article>
-
-      <article class="thanks bg-sky-tint">
-        <div class="row" style="gap: 10px">
-          <div class="avatar bg-sky" aria-hidden="true">T</div>
-          <p class="who"><strong>Theo</strong> thanked <strong>Maya</strong> · Fri</p>
-        </div>
-        <p class="body-text">Maya helped me with my fractions homework and didn't make fun of me once.</p>
-      </article>
-
-      <article class="thanks bg-violet-tint">
-        <div class="row" style="gap: 10px">
-          <div class="avatar bg-violet" aria-hidden="true">M</div>
-          <p class="who"><strong>Maya</strong> thanked <strong>Dad</strong> · Wed</p>
-        </div>
-        <p class="body-text">Thanks for driving me to early practice all week without complaining, even Thursday when it was pouring.</p>
-      </article>
-
-      <article class="thanks bg-sun-tint">
-        <div class="row" style="gap: 10px">
-          <div class="avatar bg-sun" aria-hidden="true">L</div>
-          <p class="who"><strong>Luis</strong> thanked <strong>Grace</strong> · Tue</p>
-        </div>
-        <p class="body-text">Grace sat on hold with the insurance company for my car so I didn't have to. Saved me a whole afternoon.</p>
-      </article>
-
-      <article class="thanks bg-mint-tint">
-        <div class="row" style="gap: 10px">
-          <div class="avatar bg-mint" aria-hidden="true">G</div>
-          <p class="who"><strong>Grace</strong> thanked <strong>Grandma Ruth</strong> · Mon</p>
-        </div>
-        <p class="body-text">Mom mailed us the recipe cards she wrote out by hand. The tamale one is going on the fridge.</p>
-      </article>
-    </section>
-  </main>
+  <main class="app-main" id="main" style="padding-top: 0"><p class="note">Loading…</p></main>
 
   <nav class="tabbar" data-current="home"></nav>
 </div>
 <script src="js/app.js"></script>
+<script type="module">
+  import { boot, avatar, tintOf, showError } from './js/ui.js';
+  import { renderScene, describeScene } from './js/town.js';
+  import { esc, relativeDay } from './js/util.js';
+
+  const main = document.getElementById('main');
+  try {
+    const ctx = await boot({ needGroup: false });
+    if (!ctx.group) {
+      document.getElementById('eyebrow').textContent = `Hi, ${ctx.profile.display_name}`;
+      document.getElementById('title').textContent = 'Welcome to town';
+      main.innerHTML = `
+        <div class="ink-card ink-card--lg">
+          <h2 class="form-title">Start with your people</h2>
+          <p class="muted" style="font-size: 14px; line-height: 1.5">A group is the family or friends you share thank-yous with. Your group gets its own town, which starts as an empty meadow and grows every week you share.</p>
+        </div>
+        <a class="btn" href="new-group.html">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Start a group
+        </a>
+        <a class="btn btn--outline btn--md" href="groups.html#join">I have an invite code</a>`;
+    } else {
+      const { group, town, data, me, today } = ctx;
+      document.getElementById('title').textContent = group.name;
+      document.getElementById('switch').hidden = false;
+      const nameOf = (id) => data.members.find((m) => m.user_id === id);
+      const latest = town.news.find((n) => n.kind === 'build') || town.news[0];
+      const sharedToday = data.thanks.some((t) => t.author_id === me.user_id && t.day === today);
+      const lastWeek = town.completed[town.completed.length - 1];
+      const feed = [...town.current.thanks].reverse();
+
+      main.innerHTML = `
+        <a class="town-card" href="town.html" aria-label="Visit ${esc(group.town_name)}">
+          ${renderScene(town.state, { viewBox: '0 30 350 230', labels: false })}
+          <div class="caption row">
+            <div class="stack stack-2 grow">
+              <span style="font-size: 13px; color: var(--on-ink-muted)">${esc(group.town_name)} · Week ${town.current.number}</span>
+              <span class="headline">${esc(town.state.pieces ? latest.text.replace(/\.$/, '') : 'An empty meadow, ready to grow')}</span>
+            </div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" class="a-stroke" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </div>
+        </a>
+        <p class="sr-only">${esc(describeScene(group.town_name, town.state))}</p>
+
+        ${lastWeek ? `
+        <a class="recap-banner" href="recap.html">
+          <div class="mosaic" aria-hidden="true"><div class="bg-accent"></div><div class="bg-sky"></div><div class="bg-mint"></div><div class="bg-ink"></div></div>
+          <div class="stack stack-1 grow">
+            <span style="font-size: 16px; font-weight: 700">Sunday recap is ready</span>
+            <span style="font-size: 13px">See how ${esc(group.town_name)} changed in week ${lastWeek.number}</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        </a>` : ''}
+
+        ${sharedToday
+          ? `<a class="btn btn--outline" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>You shared today's thank-you</a>`
+          : `<a class="btn" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Share today's thank-you</a>`}
+
+        <section class="stack stack-12" aria-label="This week's thank-yous">
+          <h2 class="section-title">This week's thank-yous</h2>
+          ${feed.length ? feed.map((t) => {
+            const author = nameOf(t.author_id) || { name: 'Someone', color: '#FFFFFF' };
+            return `
+            <article class="thanks" style="background: ${tintOf(author.color)}">
+              <div class="row" style="gap: 10px">
+                ${avatar(author)}
+                <div class="stack stack-4">
+                  <p class="who"><strong>${esc(author.user_id === me.user_id ? 'You' : author.name)}</strong> thanked <strong>${esc(t.recipient_id === me.user_id ? 'you' : t.recipient_name)}</strong> · ${relativeDay(t.day, today)}</p>
+                  ${t.recipient_id ? '' : '<span class="badge">Outside the group</span>'}
+                </div>
+              </div>
+              <p class="body-text">${esc(t.body)}</p>
+            </article>`;
+          }).join('') : `
+            <div class="empty">
+              <span class="item-title">No thank-yous yet this week</span>
+              <span class="note">${data.members.length > 1 ? 'Be the first. Every thank-you helps the town grow.' : `It's just you so far. Invite your family from the Groups tab, then share the first thank-you.`}</span>
+            </div>`}
+        </section>`;
+    }
+  } catch (e) {
+    showError(main, e.message);
+  }
+</script>
 </body>
 </html>

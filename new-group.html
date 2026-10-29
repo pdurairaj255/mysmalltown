@@ -44,7 +44,7 @@
   <form id="new-group" class="app-main" style="gap: 18px; padding-top: 8px">
     <div class="field">
       <label class="form-title" for="group-name">Group name</label>
-      <input class="input" id="group-name" type="text" maxlength="40" autocomplete="off" required>
+      <input class="input" id="group-name" type="text" maxlength="40" autocomplete="off" required placeholder="The Garcia Family">
     </div>
 
     <div class="preview" role="img" aria-label="Preview of your town">
@@ -73,9 +73,14 @@
         <label for="town-name" style="font-size: 15px; font-weight: 700">Town name</label>
         <input class="input input--sm" id="town-name" type="text" maxlength="40" placeholder="Name your town" autocomplete="off">
       </div>
-      <span class="note">You can rename the town later from the Town screen.</span>
+      <fieldset class="field" style="border: 0; margin: 0; padding: 0">
+        <legend style="font-size: 15px; font-weight: 700; padding: 0; margin-bottom: 8px">Town color</legend>
+        <div class="swatches" id="accents"></div>
+      </fieldset>
+      <span class="note">You can rename the town or change its color later from the Town screen.</span>
     </div>
 
+    <p class="form-error" role="alert" hidden></p>
     <div class="stack stack-8" style="margin-top: auto">
       <button type="submit" class="btn">Create group</button>
       <span class="note center">Next, you'll get an invite link to send to people.</span>
@@ -83,7 +88,18 @@
   </form>
 </div>
 <script src="js/app.js"></script>
-<script>
+<script type="module">
+  import { boot, api, ACCENTS, applyAccent, rememberGroup } from './js/ui.js';
+
+  await boot({ needGroup: false });
+  const form = document.getElementById('new-group');
+  const error = form.querySelector('.form-error');
+  document.getElementById('accents').innerHTML = ACCENTS.map((a, i) => `
+    <label class="swatch"><input type="radio" name="accent" value="${a.hex}"${i === 0 ? ' checked' : ''}><span style="background: ${a.hex}"></span><span class="sr-only">${a.name}</span></label>`).join('');
+  const accent = () => form.querySelector('input[name=accent]:checked').value;
+  applyAccent(accent());
+  form.querySelectorAll('input[name=accent]').forEach((r) => r.addEventListener('change', () => applyAccent(accent())));
+
   const groupName = document.getElementById('group-name');
   const sameName = document.getElementById('same-name');
   const townField = document.getElementById('town-field');
@@ -100,9 +116,22 @@
   sameName.addEventListener('change', update);
   update();
 
-  document.getElementById('new-group').addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    window.location.href = 'groups.html';
+    const name = groupName.value.trim();
+    const town_name = (sameName.checked ? name : townName.value.trim()) || name;
+    const fail = (msg) => { error.textContent = msg; error.hidden = false; };
+    if (!name) return fail('Give your group a name, like "The Garcia Family".');
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true;
+    try {
+      const id = await api.createGroup({ name, town_name, accent: accent() });
+      rememberGroup(id);
+      location.href = 'groups.html';
+    } catch (err) {
+      fail(err.message);
+      btn.disabled = false;
+    }
   });
 </script>
 </body>

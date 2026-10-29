@@ -361,6 +361,95 @@ button { font-family: inherit; color: inherit; }
 .bg-ink { background: var(--ink); }       .bg-line { background: var(--line); }
 .bg-white { background: var(--surface); } .bg-accent { background: var(--accent); }
 
+/* ---------- App states ---------- */
+
+[hidden] { display: none !important; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.demo-banner {
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  padding: 6px 16px;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 100px;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  background: var(--ink);
+  color: var(--on-ink);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 20;
+}
+
+.empty {
+  background: var(--surface);
+  border: 1.5px dashed var(--violet);
+  border-radius: 18px;
+  padding: 18px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-error { margin: 0; font-size: 14px; font-weight: 600; color: #B3261E; }
+
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 8px 4px;
+  min-height: 44px;
+  font: 700 15px var(--font-body);
+  color: var(--ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Color choices (people and towns) */
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; border: 0; margin: 0; padding: 0; }
+.swatch { position: relative; cursor: pointer; }
+.swatch input { position: absolute; opacity: 0; width: 44px; height: 44px; margin: 0; cursor: pointer; }
+.swatch span:not(.sr-only) {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+}
+.swatch input:checked + span { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--ink); }
+.swatch input:focus-visible + span { outline: 3px solid var(--ink); outline-offset: 6px; }
+
+/* Bottom sheet dialog */
+.sheet {
+  border: 0;
+  padding: 0;
+  margin: auto auto 0;
+  width: 100%;
+  max-width: 430px;
+  border-radius: 24px 24px 0 0;
+  background: var(--bg);
+  color: var(--ink);
+}
+.sheet::backdrop { background: rgba(34, 26, 71, 0.45); }
+.sheet form { padding: 20px 20px 28px; display: flex; flex-direction: column; gap: 16px; }
+
 /* ---------- Bottom tab bar ---------- */
 
 .tabbar {

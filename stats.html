@@ -31,121 +31,122 @@
   .pips { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
   .pips div { height: 10px; border-radius: 5px; background: var(--line-soft); }
   .pips .on { border: 1.5px solid var(--ink); }
-  .chart { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; align-items: end; height: 108px; border-bottom: 1.5px solid var(--ink); }
+  .chart { display: grid; gap: 4px; align-items: end; height: 108px; border-bottom: 1.5px solid var(--ink); }
   .chart > div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .chart span { font-size: 10px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .chart .bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--mint); }
+  .chart .bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--mint); min-height: 1px; }
   .chart .last span { font-weight: 800; color: var(--ink); }
   .chart .last .bar { background: var(--coral); }
-  .axis { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; text-align: center; font-size: 10px; color: var(--muted); }
+  .axis { display: grid; gap: 4px; text-align: center; font-size: 10px; color: var(--muted); }
   .axis .last { font-weight: 800; color: var(--ink); }
 </style>
 </head>
 <body>
 <div class="app">
   <header class="app-header">
-    <span class="eyebrow">The Reyes Family · Oct 19 – 25</span>
+    <span class="eyebrow" id="eyebrow">&nbsp;</span>
     <h1 class="page-title">Stats</h1>
   </header>
 
-  <main class="app-main">
-    <section class="ink-card ink-card--lg" style="gap: 14px" aria-label="Your week">
-      <h2 class="eyebrow" style="color: var(--on-ink-muted)">Your week</h2>
-      <div class="stack stack-8">
-        <div class="row" style="align-items: baseline; gap: 8px">
-          <span class="num big-num">1</span>
-          <span style="font-size: 16px; font-weight: 600">of 7 thank-yous shared</span>
-        </div>
-        <div class="week-dots week-dots--lg" role="img" aria-label="Shared a thank-you on Tuesday">
-          <div><div class="dot"></div><span>M</span></div>
-          <div><div class="dot dot--on"></div><span>T</span></div>
-          <div><div class="dot"></div><span>W</span></div>
-          <div><div class="dot"></div><span>T</span></div>
-          <div><div class="dot"></div><span>F</span></div>
-          <div><div class="dot"></div><span>S</span></div>
-          <div><div class="dot"></div><span>S</span></div>
-        </div>
-      </div>
-      <div class="tiles tiles--2">
-        <div class="tile"><span class="num">3</span><span class="lbl">visits</span></div>
-        <div class="tile"><span class="num">38 min</span><span class="lbl">in the app</span></div>
-      </div>
-    </section>
-
-    <section class="card card--lg" aria-label="The group this week">
-      <h2 class="eyebrow">The group this week</h2>
-      <div class="tiles tiles--3">
-        <div class="tile bg-coral-tint"><span class="num">6</span><span class="lbl">thank-yous of 42 possible</span></div>
-        <div class="tile bg-sky-tint"><span class="num">24</span><span class="lbl">visits</span></div>
-        <div class="tile bg-violet-tint"><span class="num">3 h 12 m</span><span class="lbl">in the app</span></div>
-      </div>
-
-      <div class="people-table" role="table" aria-label="Each person's thank-yous and visits this week">
-        <div role="row" class="head">
-          <span role="columnheader" style="grid-column: span 2">Person</span>
-          <span role="columnheader">Thank-yous</span>
-          <span role="columnheader" style="text-align: right">Visits</span>
-        </div>
-        <!-- Rows are filled in from GROUP_WEEK below -->
-      </div>
-      <span class="meta">Each dot is a day with a thank-you, up to one a day.</span>
-    </section>
-
-    <section class="card card--lg bg-mint-tint" aria-label="This year">
-      <div class="stack stack-4">
-        <h2 class="eyebrow" style="color: var(--forest-ink)">This year</h2>
-        <span style="font-size: 13px; line-height: 1.45; color: var(--forest-ink)">Counting since Aug 9, when your group reached its first hour in the app together.</span>
-      </div>
-      <div class="tiles tiles--3">
-        <div class="tile bg-white"><span class="num">52</span><span class="lbl">thank-yous</span></div>
-        <div class="tile bg-white"><span class="num">231</span><span class="lbl">visits</span></div>
-        <div class="tile bg-white"><span class="num">29 h</span><span class="lbl">in the app</span></div>
-      </div>
-      <div class="inset bg-white" style="border-radius: 14px; padding: 14px 12px 10px">
-        <span style="font-size: 13px; font-weight: 700">Thank-yous each week</span>
-        <div class="chart" role="img" id="week-chart"></div>
-        <div class="axis" aria-hidden="true" id="week-axis"></div>
-        <span class="center" style="font-size: 11px; color: var(--muted)">Week</span>
-      </div>
-    </section>
-  </main>
+  <main class="app-main" id="main"><p class="note">Loading…</p></main>
 
   <nav class="tabbar" data-current="stats"></nav>
 </div>
 <script src="js/app.js"></script>
-<script>
-  const GROUP_WEEK = [
-    { name: 'Grace', initial: 'G', color: 'var(--mint)', posts: 2, visits: 7 },
-    { name: 'Grandma Ruth', initial: 'R', color: 'var(--coral)', posts: 1, visits: 6 },
-    { name: 'Maya', initial: 'M', color: 'var(--violet)', posts: 1, visits: 5 },
-    { name: 'Luis (you)', initial: 'L', color: 'var(--sun)', posts: 1, visits: 3 },
-    { name: 'Theo', initial: 'T', color: 'var(--sky)', posts: 1, visits: 2 },
-    { name: 'Aunt Priya', initial: 'P', color: 'var(--pink)', posts: 0, visits: 1 }
-  ];
-  const WEEKLY_THANKS = [2, 3, 4, 3, 5, 4, 5, 6, 4, 5, 5, 6];
+<script type="module">
+  import { boot, avatar, showError } from './js/ui.js';
+  import { esc, addDays, shortDate } from './js/util.js';
 
-  const table = document.querySelector('.people-table');
-  table.insertAdjacentHTML('beforeend', GROUP_WEEK.map((p) => {
-    const pips = Array.from({ length: 7 }, (_, i) =>
-      i < p.posts ? `<div class="on" style="background: ${p.color}"></div>` : '<div></div>'
-    ).join('');
-    return `<div role="row">
-      <div class="avatar avatar--32" aria-hidden="true" style="background: ${p.color}">${p.initial}</div>
-      <span role="cell" style="font-size: 15px; font-weight: 600; min-width: 0">${p.name}</span>
-      <div role="cell" class="pips" aria-label="${p.posts} of 7 days">${pips}</div>
-      <span role="cell" style="font-size: 15px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums">${p.visits}</span>
-    </div>`;
-  }).join(''));
+  const main = document.getElementById('main');
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-  const chart = document.getElementById('week-chart');
-  const last = WEEKLY_THANKS.length - 1;
-  chart.setAttribute('aria-label', `Group thank-yous by week, weeks 1 to ${WEEKLY_THANKS.length}: ${WEEKLY_THANKS.join(', ')}`);
-  chart.innerHTML = WEEKLY_THANKS.map((v, i) =>
-    `<div${i === last ? ' class="last"' : ''}><span>${v}</span><div class="bar" style="height: ${v * 13}px"></div></div>`
-  ).join('');
-  document.getElementById('week-axis').innerHTML = WEEKLY_THANKS.map((_, i) =>
-    `<span${i === last ? ' class="last"' : ''}>${i + 1}</span>`
-  ).join('');
+  try {
+    const { group, town, data, me } = await boot();
+    const week = town.current;
+    document.getElementById('eyebrow').textContent = `${group.name} · ${shortDate(week.start)} – ${shortDate(week.end)}`;
+
+    const days = Array.from({ length: 7 }, (_, i) => addDays(week.start, i));
+    const sharedDays = (id) => new Set(week.thanks.filter((t) => t.author_id === id).map((t) => t.day));
+    const mine = sharedDays(me.user_id);
+    const myVisits = (week.visitDays.get(me.user_id) || []).length;
+    const received = week.thanks.filter((t) => t.recipient_id === me.user_id).length;
+    const groupVisits = [...week.visitDays.values()].reduce((n, d) => n + d.length, 0);
+
+    const rows = data.members.map((m) => ({ ...m, posts: sharedDays(m.user_id).size, visits: (week.visitDays.get(m.user_id) || []).length }))
+      .sort((a, b) => b.posts - a.posts || b.visits - a.visits);
+
+    const recent = town.weeks.slice(-12);
+    const max = Math.max(1, ...recent.map((w) => w.thanks.length));
+    const cols = `grid-template-columns: repeat(${recent.length}, minmax(0, 1fr))`;
+
+    main.innerHTML = `
+      <section class="ink-card ink-card--lg" style="gap: 14px" aria-label="Your week">
+        <h2 class="eyebrow" style="color: var(--on-ink-muted)">Your week</h2>
+        <div class="stack stack-8">
+          <div class="row" style="align-items: baseline; gap: 8px">
+            <span class="num big-num">${mine.size}</span>
+            <span style="font-size: 16px; font-weight: 600">of 7 thank-yous shared</span>
+          </div>
+          <div class="week-dots week-dots--lg" role="img" aria-label="Shared a thank-you on ${plural(mine.size, 'day')} this week">
+            ${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => `<div><div class="dot${mine.has(days[i]) ? ' dot--on' : ''}"></div><span>${d}</span></div>`).join('')}
+          </div>
+        </div>
+        <div class="tiles tiles--2">
+          <div class="tile"><span class="num">${myVisits}</span><span class="lbl">${myVisits === 1 ? 'day' : 'days'} you visited</span></div>
+          <div class="tile"><span class="num">${received}</span><span class="lbl">thank-you${received === 1 ? '' : 's'} for you</span></div>
+        </div>
+      </section>
+
+      <section class="card card--lg" aria-label="The group this week">
+        <h2 class="eyebrow">The group this week</h2>
+        <div class="tiles tiles--3">
+          <div class="tile bg-coral-tint"><span class="num">${week.thanks.length}</span><span class="lbl">thank-yous of ${data.members.length * 7} possible</span></div>
+          <div class="tile bg-sky-tint"><span class="num">${groupVisits}</span><span class="lbl">visits</span></div>
+          <div class="tile bg-violet-tint"><span class="num">${week.lit.length}</span><span class="lbl">streetlight${week.lit.length === 1 ? '' : 's'} lit</span></div>
+        </div>
+        <div class="people-table" role="table" aria-label="Each person's thank-yous and visits this week">
+          <div role="row" class="head">
+            <span role="columnheader" style="grid-column: span 2">Person</span>
+            <span role="columnheader">Thank-yous</span>
+            <span role="columnheader" style="text-align: right">Visits</span>
+          </div>
+          ${rows.map((p) => `
+            <div role="row">
+              ${avatar(p, 'avatar--32')}
+              <span role="cell" style="font-size: 15px; font-weight: 600; min-width: 0; overflow-wrap: anywhere">${esc(p.name)}${p.user_id === me.user_id ? ' (you)' : ''}</span>
+              <div role="cell" class="pips" aria-label="${p.posts} of 7 days">
+                ${Array.from({ length: 7 }, (_, i) => (i < p.posts ? `<div class="on" style="background: ${esc(p.color)}"></div>` : '<div></div>')).join('')}
+              </div>
+              <span role="cell" style="font-size: 15px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums">${p.visits}</span>
+            </div>`).join('')}
+        </div>
+        <span class="meta">Each dot is a day with a thank-you, up to one a day.</span>
+      </section>
+
+      <section class="card card--lg bg-mint-tint" aria-label="Since the start">
+        <div class="stack stack-4">
+          <h2 class="eyebrow" style="color: var(--forest-ink)">Since the start</h2>
+          <span style="font-size: 13px; line-height: 1.45; color: var(--forest-ink)">Counting since ${shortDate(town.start)}, the week ${esc(group.town_name)} was founded.</span>
+        </div>
+        <div class="tiles tiles--3">
+          <div class="tile bg-white"><span class="num">${data.thanks.length}</span><span class="lbl">thank-yous</span></div>
+          <div class="tile bg-white"><span class="num">${data.visits.length}</span><span class="lbl">visits</span></div>
+          <div class="tile bg-white"><span class="num">${town.state.pieces}</span><span class="lbl">pieces built</span></div>
+        </div>
+        <div class="inset bg-white" style="border-radius: 14px; padding: 14px 12px 10px">
+          <span style="font-size: 13px; font-weight: 700">Thank-yous each week</span>
+          <div class="chart" style="${cols}" role="img" aria-label="Group thank-yous by week, weeks ${recent[0].number} to ${week.number}: ${recent.map((w) => w.thanks.length).join(', ')}">
+            ${recent.map((w, i) => `<div${i === recent.length - 1 ? ' class="last"' : ''}><span>${w.thanks.length}</span><div class="bar" style="height: ${Math.round((w.thanks.length / max) * 80)}px"></div></div>`).join('')}
+          </div>
+          <div class="axis" style="${cols}" aria-hidden="true">
+            ${recent.map((w, i) => `<span${i === recent.length - 1 ? ' class="last"' : ''}>${w.number}</span>`).join('')}
+          </div>
+          <span class="center" style="font-size: 11px; color: var(--muted)">Week</span>
+        </div>
+      </section>`;
+  } catch (e) {
+    showError(main, e.message);
+  }
 </script>
 </body>
 </html>
