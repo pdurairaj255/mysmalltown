@@ -99,7 +99,7 @@
 
       <section class="card" aria-label="Your profile">
         <div class="row">
-          ${avatar({ name: profile.display_name, color: profile.color })}
+          ${avatar({ name: profile.display_name, avatar: profile.avatar })}
           <div class="stack stack-1 grow">
             <span class="item-title">${esc(profile.display_name)}</span>
             <span class="note">${esc(user.email || '')}</span>

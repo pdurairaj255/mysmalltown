@@ -58,9 +58,10 @@
         <label class="form-title" for="display-name">Your name</label>
         <input class="input" id="display-name" type="text" maxlength="40" autocomplete="given-name" required placeholder="What your family calls you">
       </div>
-      <fieldset class="field" style="border: 0; margin: 0; padding: 0">
-        <legend class="form-title" style="padding: 0; margin-bottom: 8px">Your color</legend>
-        <div class="swatches" id="colors"></div>
+      <fieldset class="field" style="border: 0; margin: 0; padding: 0; gap: 14px">
+        <legend class="form-title" style="padding: 0; margin-bottom: 4px">Pick your townsperson</legend>
+        <p class="note" style="margin: 0">This is you in the town and next to everything you share.</p>
+        <div class="stack stack-14" id="avatars"></div>
       </fieldset>
       <p class="form-error" role="alert" hidden></p>
       <button type="submit" class="btn">Continue</button>
@@ -69,7 +70,7 @@
 </div>
 <script src="js/app.js"></script>
 <script type="module">
-  import { api, isDemo, PEOPLE_COLORS, safeNext } from './js/ui.js';
+  import { api, isDemo, AVATARS, AGE_GROUPS, portrait, safeNext } from './js/ui.js';
   import { esc } from './js/util.js';
 
   const params = new URLSearchParams(location.search);
@@ -95,8 +96,18 @@
     try { await fn(); } catch (e) { setError(form, e.message); } finally { btn.disabled = false; }
   }
 
-  document.getElementById('colors').innerHTML = PEOPLE_COLORS.map((c, i) => `
-    <label class="swatch"><input type="radio" name="color" value="${c.hex}"${i === 0 ? ' checked' : ''}><span style="background: ${c.hex}"></span><span class="sr-only">${esc(c.name)}</span></label>`).join('');
+  document.getElementById('avatars').innerHTML = AGE_GROUPS.map((age) => `
+    <fieldset class="avatar-group">
+      <legend>${age}</legend>
+      <div class="avatar-grid">
+        ${AVATARS.filter((v) => v.age === age).map((v) => `
+          <label class="avatar-choice" title="${esc(v.label)}">
+            <input type="radio" name="avatar" value="${v.id}">
+            <span class="pic">${portrait(v.id)}</span>
+            <span class="sr-only">${esc(v.label)}</span>
+          </label>`).join('')}
+      </div>
+    </fieldset>`).join('');
 
   async function afterSignIn() {
     const user = await api.getUser();
@@ -104,7 +115,7 @@
     if (profile && params.get('step') !== 'profile') { location.replace(next); return; }
     if (profile) {
       document.getElementById('display-name').value = profile.display_name;
-      const radio = document.querySelector(`input[name=color][value="${profile.color}"]`);
+      const radio = document.querySelector(`input[name=avatar][value="${CSS.escape(profile.avatar || '')}"]`);
       if (radio) radio.checked = true;
     }
     show('profile');
@@ -148,9 +159,10 @@
     busy(steps.profile, async () => {
       const display_name = document.getElementById('display-name').value.trim();
       if (!display_name) throw new Error('Please enter your name.');
-      const color = document.querySelector('input[name=color]:checked').value;
+      const avatar = document.querySelector('input[name=avatar]:checked')?.value;
+      if (!avatar) throw new Error('Pick the townsperson who looks most like you.');
       const user = await api.getUser();
-      await api.saveProfile(user.id, { display_name, color });
+      await api.saveProfile(user.id, { display_name, avatar });
       location.replace(next);
     });
   });

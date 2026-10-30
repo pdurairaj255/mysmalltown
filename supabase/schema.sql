@@ -9,7 +9,8 @@
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text not null check (char_length(display_name) between 1 and 40),
-  color text not null default '#3DD49A',
+  -- One of the 20 avatar ids in js/avatars.js (kid-1 … grand-5).
+  avatar text not null default 'adult-1' check (avatar ~ '^[a-z]+-[0-9]{1,2}$'),
   created_at timestamptz not null default now()
 );
 

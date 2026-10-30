@@ -16,6 +16,13 @@ Until it's connected, the app runs in **demo mode**: everything stays on the dev
 
 This creates the tables and the privacy rules: people can only see groups they belong to, and the people in those groups.
 
+> **Ran an earlier version of the schema?** People now pick an avatar instead of a color. Run this once in the SQL Editor to add it:
+>
+> ```sql
+> alter table public.profiles add column if not exists avatar text not null default 'adult-1'
+>   check (avatar ~ '^[a-z]+-[0-9]{1,2}$');
+> ```
+
 ## 3. Set up sign-in emails
 
 1. Open **Authentication → Sign In / Providers** and make sure **Email** is enabled. Turn **Confirm email** on.
@@ -52,7 +59,7 @@ This creates the tables and the privacy rules: people can only see groups they b
 
 ## 5. Invite your family
 
-1. Open the app, sign in with your email, and pick your name and color.
+1. Open the app, sign in with your email, and pick your name and townsperson (20 avatars: kids, teens, adults and grandparents).
 2. Tap **Start a group**, name it, and choose a town name and color.
 3. On the **Groups** tab, tap **Share link** (or **Copy link**) and send it to your family. They sign in with their own email, and the link fills in the invite code for them.
 4. To install it on a phone: on iPhone, open the link in Safari and tap **Share → Add to Home Screen**. On Android, open it in Chrome and tap **⋮ → Install app**.

@@ -54,7 +54,7 @@
 </div>
 <script src="js/app.js"></script>
 <script type="module">
-  import { boot, avatar, showError } from './js/ui.js';
+  import { boot, avatar, shirtOf, showError } from './js/ui.js';
   import { esc, addDays, shortDate } from './js/util.js';
 
   const main = document.getElementById('main');
@@ -115,7 +115,7 @@
               ${avatar(p, 'avatar--32')}
               <span role="cell" style="font-size: 15px; font-weight: 600; min-width: 0; overflow-wrap: anywhere">${esc(p.name)}${p.user_id === me.user_id ? ' (you)' : ''}</span>
               <div role="cell" class="pips" aria-label="${p.posts} of 7 days">
-                ${Array.from({ length: 7 }, (_, i) => (i < p.posts ? `<div class="on" style="background: ${esc(p.color)}"></div>` : '<div></div>')).join('')}
+                ${Array.from({ length: 7 }, (_, i) => (i < p.posts ? `<div class="on" style="background: ${shirtOf(p.avatar)}"></div>` : '<div></div>')).join('')}
               </div>
               <span role="cell" style="font-size: 15px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums">${p.visits}</span>
             </div>`).join('')}

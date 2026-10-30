@@ -11,10 +11,10 @@
 //   what they did this week.
 
 import { esc, dayKey, addDays, daysBetween, mondayOf, possessive, listNames } from './util.js';
+import { figure } from './avatars.js';
 
 const INK = '#221A47';
 const SLAB = '#8F86B5';
-const SKIN = ['#C68A5B', '#E8B48A', '#7A4E2D', '#F1C9A5'];
 
 // ---------- Buildings ----------
 
@@ -188,6 +188,7 @@ const LIGHT_SLOTS = [[140, 240], [172, 204], [210, 178], [166, 162], [226, 222],
 // Kept above y≈232 so name tags (drawn 20px below) stay inside the 260px scene.
 const PEOPLE_SLOTS = [[160, 222], [192, 226], [250, 222], [300, 228], [112, 228], [60, 226], [226, 232], [330, 230]];
 const VISITOR_SLOTS = [[208, 212], [186, 242], [176, 186]];
+const VISITOR_AVATARS = ['adult-4', 'teen-2', 'grand-3'];
 
 // ---------- Rules ----------
 
@@ -276,7 +277,7 @@ export function sceneState(town, week, { before = false } = {}) {
   const prev = before ? town.weeks[week.index - 1] : week;
   return {
     ...counts,
-    people: (prev ? prev.members : []).map((m) => ({ name: m.name, color: m.color, status: prev ? statusFor(m.user_id, prev) : 'home' })),
+    people: (prev ? prev.members : []).map((m) => ({ name: m.name, avatar: m.avatar, status: prev ? statusFor(m.user_id, prev) : 'home' })),
     visitors: prev ? prev.outsiders.length : 0
   };
 }
@@ -361,11 +362,6 @@ function drawing(accent) {
       `<line x1="${mx}" y1="${my0}" x2="${mx}" y2="${my1}" stroke="#FF7A59" stroke-width="3"/><line x1="${jx0}" y1="${my1 + 2}" x2="${jx1}" y2="${my1 + 2}" stroke="#FF7A59" stroke-width="3"/>` +
       `<line x1="${hx}" y1="${my1 + 2}" x2="${hx}" y2="${hy}" stroke="${INK}" stroke-width="1.5"/>` + d.rect(hx - 9, hy, 18, 4, 'accent', `stroke="${INK}"`),
     sparkle: (x, y) => `<path d="M${x} ${y - 8} L${x + 2} ${y - 2} L${x + 8} ${y} L${x + 2} ${y + 2} L${x} ${y + 8} L${x - 2} ${y + 2} L${x - 8} ${y} L${x - 2} ${y - 2} Z" ${fill('accent')} stroke="${INK}" stroke-width="1"/>`,
-    person(x, y, color, skin, hat) {
-      let s = `<circle cx="${x}" cy="${y}" r="4.5" fill="${skin}"/><rect x="${x - 4.5}" y="${y + 5}" width="9" height="13" rx="3" fill="${esc(color)}" stroke="${INK}" stroke-width="0.8"/>`;
-      if (hat) s += `<path d="M${x - 5} ${y - 1} a5 5 0 0 1 10 0 z" ${fill('accent')} stroke="${INK}" stroke-width="0.6"/>`;
-      return s;
-    },
     tag(x, y, name) {
       const label = esc(name.split(' ')[0].slice(0, 10));
       const w = Math.max(24, label.length * 4.6 + 9);
@@ -380,7 +376,7 @@ function extraAt(i, d) {
   return kind === 'tree' ? d.tree(x, y, r) : d.flowers(x, y);
 }
 
-// state: { pieces, extras, lights, people: [{ name, color, status }], visitors }
+// state: { pieces, extras, lights, people: [{ name, avatar, status }], visitors }
 // opts:  { accent (literal color, for exported images), labels, since (an
 //          earlier state; new things get sparkles), viewBox, title }
 export function renderScene(state, opts = {}) {
@@ -416,12 +412,12 @@ export function renderScene(state, opts = {}) {
 
   (state.people || []).slice(0, PEOPLE_SLOTS.length).forEach((p, i) => {
     const [x, y] = PEOPLE_SLOTS[i];
-    parts.push(d.person(x, y, p.color, SKIN[i % SKIN.length], p.status === 'leading' || p.status === 'helping'));
+    parts.push(figure(p.avatar, x, y, { hatAttr: p.status === 'leading' || p.status === 'helping' ? d.fill('accent') : null }));
     if (labels) parts.push(d.tag(x, y + 20, p.name));
   });
   for (let i = 0; i < Math.min(state.visitors || 0, VISITOR_SLOTS.length); i++) {
     const [x, y] = VISITOR_SLOTS[i];
-    parts.push(d.person(x, y, i % 2 ? '#4FB7FF' : '#FF7EB6', SKIN[(i + 1) % SKIN.length], false), d.rect(x - 11, y + 9, 6, 9, '#7A4E2D', 'rx="2"'));
+    parts.push(figure(VISITOR_AVATARS[i], x, y), d.rect(x - 11, y + 9, 6, 9, '#7A4E2D', 'rx="2"'));
   }
 
   if (since) {

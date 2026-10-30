@@ -70,7 +70,7 @@
             <legend class="form-title">Who are you thanking?</legend>
             <div class="people-grid">
               ${others.map((m) => `
-                <button type="button" class="person" data-id="${esc(m.user_id)}" data-name="${esc(m.name)}" aria-pressed="false" style="--tint: ${tintOf(m.color)}">
+                <button type="button" class="person" data-id="${esc(m.user_id)}" data-name="${esc(m.name)}" aria-pressed="false" style="--tint: ${tintOf(m.avatar)}">
                   ${avatar(m, 'avatar--40')}<span class="name">${esc(m.name)}</span>
                 </button>`).join('')}
               <button type="button" class="person" data-id="" data-name="" aria-pressed="false" style="--tint: var(--sun-tint)">

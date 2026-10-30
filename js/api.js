@@ -36,13 +36,13 @@ function supabaseBackend(sb) {
     },
 
     async getProfile(userId) {
-      const { data, error } = await sb.from('profiles').select('id, display_name, color').eq('id', userId).maybeSingle();
+      const { data, error } = await sb.from('profiles').select('id, display_name, avatar').eq('id', userId).maybeSingle();
       if (error) fail(error);
       return data;
     },
 
-    async saveProfile(userId, { display_name, color }) {
-      const { error } = await sb.from('profiles').upsert({ id: userId, display_name, color });
+    async saveProfile(userId, { display_name, avatar }) {
+      const { error } = await sb.from('profiles').upsert({ id: userId, display_name, avatar });
       if (error) fail(error);
     },
 
@@ -75,7 +75,7 @@ function supabaseBackend(sb) {
     async loadGroup(groupId) {
       const [g, m, t, v] = await Promise.all([
         sb.from('groups').select('id, name, town_name, accent, invite_code, created_by, created_at').eq('id', groupId).single(),
-        sb.from('memberships').select('user_id, joined_at, profiles (display_name, color)').eq('group_id', groupId),
+        sb.from('memberships').select('user_id, joined_at, profiles (display_name, avatar)').eq('group_id', groupId),
         sb.from('thanks').select('id, author_id, recipient_id, recipient_name, body, day, created_at').eq('group_id', groupId).order('created_at'),
         sb.from('visits').select('user_id, day').eq('group_id', groupId)
       ]);
@@ -86,7 +86,7 @@ function supabaseBackend(sb) {
           user_id: row.user_id,
           joined_at: row.joined_at,
           name: row.profiles?.display_name ?? 'Someone',
-          color: row.profiles?.color ?? '#3DD49A'
+          avatar: row.profiles?.avatar
         })),
         thanks: t.data,
         visits: v.data
@@ -152,9 +152,9 @@ function demoBackend() {
       return p ? { id: userId, ...p } : null;
     },
 
-    async saveProfile(userId, { display_name, color }) {
+    async saveProfile(userId, { display_name, avatar }) {
       const db = load();
-      db.profiles[userId] = { display_name, color };
+      db.profiles[userId] = { display_name, avatar };
       save(db);
     },
 
@@ -206,7 +206,7 @@ function demoBackend() {
           user_id: m.user_id,
           joined_at: m.joined_at,
           name: db.profiles[m.user_id]?.display_name ?? 'Someone',
-          color: db.profiles[m.user_id]?.color ?? '#3DD49A'
+          avatar: db.profiles[m.user_id]?.avatar
         })),
         thanks: db.thanks.filter((t) => t.group_id === groupId).sort((a, b) => a.created_at.localeCompare(b.created_at)),
         visits: db.visits.filter((v) => v.group_id === groupId)

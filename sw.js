@@ -5,7 +5,7 @@
 // behind. Data from the Supabase API is never cached.
 // Bump CACHE when the file list changes.
 
-const CACHE = 'mst-v3';
+const CACHE = 'mst-v4';
 const APP_FILES = [
   './',
   'index.html',
@@ -19,6 +19,7 @@ const APP_FILES = [
   'new-group.html',
   'css/styles.css',
   'js/app.js',
+  'js/avatars.js',
   'js/api.js',
   'js/config.js',
   'js/town.js',

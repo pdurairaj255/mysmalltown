@@ -3,19 +3,9 @@
 import { api, isDemo } from './api.js';
 import { computeTown } from './town.js';
 import { esc, dayKey } from './util.js';
+import { portrait, tintOf, shirtOf, AVATARS, AGE_GROUPS } from './avatars.js';
 
-export { api, isDemo };
-
-// Colors people pick for themselves (dot color + light tint for cards).
-export const PEOPLE_COLORS = [
-  { name: 'Mint', hex: '#3DD49A', tint: '#A8F0CF' },
-  { name: 'Violet', hex: '#9B7BFF', tint: '#D4C6FF' },
-  { name: 'Sky', hex: '#4FB7FF', tint: '#B5E0FF' },
-  { name: 'Coral', hex: '#FF7A59', tint: '#FFC2B0' },
-  { name: 'Pink', hex: '#FF7EB6', tint: '#FFC4DD' },
-  { name: 'Sun', hex: '#FFD23F', tint: '#FFE98F' }
-];
-export const tintOf = (hex) => PEOPLE_COLORS.find((c) => c.hex === hex)?.tint ?? '#EDE8FC';
+export { api, isDemo, portrait, tintOf, shirtOf, AVATARS, AGE_GROUPS };
 
 // Colors a group can choose for its town.
 export const ACCENTS = [
@@ -29,9 +19,9 @@ export function applyAccent(hex) {
   if (/^#[0-9A-Fa-f]{6}$/.test(hex || '')) document.documentElement.style.setProperty('--accent', hex);
 }
 
+// A person's round avatar portrait. Decorative: their name is always shown beside it.
 export function avatar(person, size = '') {
-  const initial = esc((person?.name || '?').trim().charAt(0).toUpperCase());
-  return `<span class="avatar ${size}" aria-hidden="true" style="background: ${esc(person?.color || '#FFFFFF')}">${initial}</span>`;
+  return `<span class="avatar avatar--pic ${size}" aria-hidden="true">${portrait(person?.avatar)}</span>`;
 }
 
 const store = {

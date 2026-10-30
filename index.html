@@ -110,9 +110,9 @@
         <section class="stack stack-12" aria-label="This week's thank-yous">
           <h2 class="section-title">This week's thank-yous</h2>
           ${feed.length ? feed.map((t) => {
-            const author = nameOf(t.author_id) || { name: 'Someone', color: '#FFFFFF' };
+            const author = nameOf(t.author_id) || { name: 'Someone' };
             return `
-            <article class="thanks" style="background: ${tintOf(author.color)}">
+            <article class="thanks" style="background: ${tintOf(author.avatar)}">
               <div class="row" style="gap: 10px">
                 ${avatar(author)}
                 <div class="stack stack-4">
