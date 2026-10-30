@@ -5,13 +5,16 @@
 // - When a week ends with at least two-thirds of the group having shared a
 //   thank-you, the next piece of the current building goes up. 52 pieces in all.
 // - A quiet week still adds something small (a tree or a flower bed).
-// - Anyone who visits on 3 or more days in a week lights a streetlight.
+// - Anyone who visits on 3 or more days in a week brings a surprise (see
+//   surprises.js): a streetlight, a pet, a pop-up shop, a clean-up Sunday that
+//   leaves the town spotless all next week, or, rarely, a dinosaur or superhero.
 // - Thank-yous to people outside the group bring visitors that week.
 // - Each townsperson is at home, out and about, helping or leading, based on
 //   what they did this week.
 
 import { esc, dayKey, addDays, daysBetween, mondayOf, possessive, listNames } from './util.js';
 import { figure } from './avatars.js';
+import { rollSurprise, surpriseTitle, surpriseDetail, describeSurprises, drawSurprises, drawSpotless } from './surprises.js';
 
 const INK = '#221A47';
 const SLAB = '#8F86B5';
@@ -184,7 +187,6 @@ const EXTRA_SLOTS = [
 ];
 export const extraPhrase = (i) => (EXTRA_SLOTS[i % EXTRA_SLOTS.length][0] === 'tree' ? 'A new tree grew by the road' : 'Flowers bloomed in town');
 
-const LIGHT_SLOTS = [[140, 240], [172, 204], [210, 178], [166, 162], [226, 222], [154, 180], [250, 176], [120, 244], [196, 250], [80, 176], [330, 170], [12, 170]];
 // Kept above y≈232 so name tags (drawn 20px below) stay inside the 260px scene.
 const PEOPLE_SLOTS = [[160, 222], [192, 226], [250, 222], [300, 228], [112, 228], [60, 226], [226, 232], [330, 230]];
 const VISITOR_SLOTS = [[208, 212], [186, 242], [176, 186]];
@@ -236,25 +238,29 @@ export function computeTown({ group, members, thanks, visits, today = dayKey() }
     w.visitDays.get(v.user_id).push(v.day);
   }
 
-  let pieces = 0, extras = 0, lights = 0;
+  let pieces = 0, extras = 0;
+  const surprises = [];
   for (const w of weeks) {
     w.members = members.filter((m) => dayKey(m.joined_at) <= w.end);
     w.sharers = new Set(w.thanks.map((t) => t.author_id));
     w.goal = goalFor(w.members.length);
     w.goalMet = w.sharers.size >= w.goal;
-    w.lit = [...w.visitDays].filter(([, days]) => days.length >= 3)
-      .map(([user_id, days]) => ({ user_id, day: days.sort()[2] }));
+    // A surprise arrives the day someone makes their third visit of the week.
+    w.surprises = [...w.visitDays].filter(([, days]) => days.length >= 3)
+      .map(([user_id, days]) => ({ user_id, day: days.sort()[2], ...rollSurprise(group.id, w.index, user_id) }))
+      .sort((a, b) => a.day.localeCompare(b.day) || a.user_id.localeCompare(b.user_id));
+    w.cleanup = w.surprises.some((x) => x.kind === 'cleanup');
     w.outsiders = w.thanks.filter((t) => !t.recipient_id);
-    w.before = { pieces, extras, lights };
-    lights += w.lit.length;
+    w.before = { pieces, extras, surprises: surprises.length };
+    surprises.push(...w.surprises);
     if (w.complete) {
       if (w.goalMet && pieces < TOTAL_PIECES) w.newPiece = pieces++;
       else if (!w.goalMet) w.newExtra = extras++;
     }
-    w.after = { pieces, extras, lights };
+    w.after = { pieces, extras, surprises: surprises.length };
   }
 
-  const town = { group, members, start, weeks, current: weeks[currentIndex], completed: weeks.filter((w) => w.complete) };
+  const town = { group, members, start, weeks, surprises, current: weeks[currentIndex], completed: weeks.filter((w) => w.complete) };
   town.state = sceneState(town, town.current);
   town.progress = progressAt(town.state.pieces);
   town.news = buildNews(town);
@@ -271,12 +277,19 @@ export function statusFor(userId, week) {
 }
 
 // What the town looks like at the end of `week` ("before" = at its start).
+// A clean-up happens on the Sunday that ends its week, so the town shines
+// at the end of that week and all through the next one.
 export function sceneState(town, week, { before = false } = {}) {
-  if (!week) return { pieces: 0, extras: 0, lights: 0, people: [], visitors: 0 };
+  if (!week) return { pieces: 0, extras: 0, surprises: [], spotless: false, people: [], visitors: 0 };
   const counts = before ? week.before : week.after;
   const prev = before ? town.weeks[week.index - 1] : week;
+  const lastWeek = town.weeks[week.index - 1];
+  const spotless = before || !week.complete ? !!lastWeek?.cleanup : week.cleanup;
   return {
-    ...counts,
+    pieces: counts.pieces,
+    extras: counts.extras,
+    surprises: town.surprises.slice(0, counts.surprises),
+    spotless,
     people: (prev ? prev.members : []).map((m) => ({ name: m.name, avatar: m.avatar, status: prev ? statusFor(m.user_id, prev) : 'home' })),
     visitors: prev ? prev.outsiders.length : 0
   };
@@ -302,12 +315,8 @@ export function weekChanges(town, week) {
       detail: `A quiet week: ${week.sharers.size} of ${week.goal} needed shared a thank-you. The town never goes backward.`
     });
   }
-  if (week.lit.length) {
-    items.push({
-      kind: 'light',
-      title: week.lit.length === 1 ? 'A streetlight came on' : `${week.lit.length} streetlights came on`,
-      detail: `${listNames(week.lit.map((l) => nameOf(town, l.user_id)))} stopped by 3 or more days`
-    });
+  for (const x of week.surprises) {
+    items.push({ kind: x.kind, title: surpriseTitle(x), detail: surpriseDetail(x, nameOf(town, x.user_id)) });
   }
   for (const t of week.outsiders) {
     items.push({ kind: 'visitor', title: 'A traveler passed through town', detail: `From ${possessive(nameOf(town, t.author_id))} thank-you to ${t.recipient_name}` });
@@ -325,7 +334,9 @@ function buildNews(town) {
   for (const w of town.weeks) {
     if (w.newPiece !== undefined) news.push({ day: addDays(w.end, 0), kind: 'build', text: `${pieceInfo(w.newPiece).phrase}.` });
     if (w.newExtra !== undefined) news.push({ day: w.end, kind: 'extra', text: `${extraPhrase(w.newExtra)} after a quiet week.` });
-    for (const l of w.lit) news.push({ day: l.day, kind: 'light', member: town.members.find((m) => m.user_id === l.user_id), text: `${nameOf(town, l.user_id)} lit a streetlight with a third visit this week.` });
+    for (const x of w.surprises) {
+      news.push({ day: x.day, kind: x.kind, member: town.members.find((m) => m.user_id === x.user_id), text: `${surpriseTitle(x).replace(/[.!]$/, '')}, thanks to ${possessive(nameOf(town, x.user_id))} visits.` });
+    }
     for (const t of w.outsiders) news.push({ day: t.day, kind: 'visitor', text: `A traveler arrived, thanks to ${possessive(nameOf(town, t.author_id))} thank-you to ${t.recipient_name}.` });
   }
   return news.sort((a, b) => b.day.localeCompare(a.day));
@@ -376,7 +387,7 @@ function extraAt(i, d) {
   return kind === 'tree' ? d.tree(x, y, r) : d.flowers(x, y);
 }
 
-// state: { pieces, extras, lights, people: [{ name, avatar, status }], visitors }
+// state: { pieces, extras, surprises: [{ kind, type }], spotless, people: [{ name, avatar, status }], visitors }
 // opts:  { accent (literal color, for exported images), labels, since (an
 //          earlier state; new things get sparkles), viewBox, title }
 export function renderScene(state, opts = {}) {
@@ -408,7 +419,9 @@ export function renderScene(state, opts = {}) {
     }
   }
 
-  for (let i = 0; i < Math.min(state.lights, LIGHT_SLOTS.length); i++) parts.push(d.light(...LIGHT_SLOTS[i]));
+  const surprises = drawSurprises(state.surprises || [], { accentFill: d.fill('accent'), light: d.light });
+  parts.push(surprises.parts);
+  if (state.spotless) parts.push(drawSpotless());
 
   (state.people || []).slice(0, PEOPLE_SLOTS.length).forEach((p, i) => {
     const [x, y] = PEOPLE_SLOTS[i];
@@ -426,7 +439,7 @@ export function renderScene(state, opts = {}) {
       parts.push(d.sparkle(...building.anchors[built]));
     }
     for (let i = since.extras; i < Math.min(state.extras, EXTRA_SLOTS.length); i++) parts.push(d.sparkle(EXTRA_SLOTS[i][1], EXTRA_SLOTS[i][2] - 10));
-    for (let i = since.lights; i < Math.min(state.lights, LIGHT_SLOTS.length); i++) parts.push(d.sparkle(LIGHT_SLOTS[i][0] + 8, LIGHT_SLOTS[i][1] - 6));
+    surprises.anchors.slice(since.surprises?.length || 0).forEach((a) => { if (a) parts.push(d.sparkle(...a)); });
   }
 
   const a11y = title ? `role="img" aria-label="${esc(title)}"` : 'aria-hidden="true"';
@@ -439,7 +452,8 @@ export function describeScene(townName, state) {
   const bits = [];
   if (!state.pieces) bits.push('an empty meadow');
   else bits.push(p.done ? 'every building finished' : `${p.built} of ${p.total} pieces of the ${p.building.name.toLowerCase()} built`);
-  if (state.lights) bits.push(`${state.lights} streetlight${state.lights === 1 ? '' : 's'}`);
+  bits.push(...describeSurprises(state.surprises || []));
+  if (state.spotless) bits.push('everything spotless after a clean-up');
   if (state.people?.length) bits.push(`townspeople ${listNames(state.people.map((x) => x.name))}`);
   if (state.visitors) bits.push(`${state.visitors} visitor${state.visitors === 1 ? '' : 's'}`);
   return `${townName}: ${bits.join(', ')}`;

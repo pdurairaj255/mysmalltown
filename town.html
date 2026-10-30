@@ -71,6 +71,7 @@
 <script type="module">
   import { boot, api, avatar, ACCENTS, showError, toast } from './js/ui.js';
   import { renderScene, describeScene, BUILDINGS, STATUS, statusFor, statusText } from './js/town.js';
+  import { surpriseTitle } from './js/surprises.js';
   import { esc, relativeDay, addDays, listNames } from './js/util.js';
 
   const main = document.getElementById('main');
@@ -86,7 +87,7 @@
     const { group, town, data, me, today } = await boot();
     const week = town.current;
     const p = town.progress;
-    document.getElementById('eyebrow').textContent = `${group.name} · Week ${week.number}${week.number <= 52 ? ' of 52' : ''}`;
+    document.getElementById('eyebrow').textContent = `${group.name} · Week ${week.number}`;
     document.getElementById('title').textContent = group.town_name;
     document.getElementById('rename').hidden = false;
 
@@ -95,8 +96,8 @@
     people.sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
 
     const myDays = new Set(week.visitDays.get(me.user_id) || []);
-    const myLit = myDays.size >= 3;
-    const othersLit = week.lit.filter((l) => l.user_id !== me.user_id).map((l) => data.members.find((m) => m.user_id === l.user_id)).filter(Boolean);
+    const mySurprise = week.surprises.find((x) => x.user_id === me.user_id);
+    const othersBrought = week.surprises.filter((x) => x.user_id !== me.user_id).map((x) => data.members.find((m) => m.user_id === x.user_id)).filter(Boolean);
     const left = Math.max(0, week.goal - week.sharers.size);
 
     const stageBars = p.done ? '' : `
@@ -137,7 +138,7 @@
         ${p.done ? `
           <span class="eyebrow">Your town is complete</span>
           <h2 style="font-family: var(--font-display); font-size: 21px; font-weight: 800">Every building is finished</h2>
-          <p class="item-sub">Keep sharing thank-yous to keep your townspeople busy and the streetlights glowing.</p>` : `
+          <p class="item-sub">Keep sharing thank-yous to keep your townspeople busy, and keep visiting for more surprises.</p>` : `
           <div class="row" style="justify-content: space-between; align-items: baseline">
             <span class="eyebrow">Building now</span>
             <span class="tag tag--status ${week.goalMet ? 'bg-mint-tint' : 'bg-sun-tint'}">${week.goalMet ? 'On track' : `${left} more needed`}</span>
@@ -151,38 +152,38 @@
           </div>
           <span class="item-sub" style="font-size: 14px; line-height: 1.45">${week.goal} of ${week.members.length} ${week.members.length === 1 ? 'person shares' : 'people share'} a thank-you by Sunday. ${week.sharers.size} ${week.sharers.size === 1 ? 'has' : 'have'} so far${week.goalMet ? ', so the next piece goes up Sunday night.' : '.'}</span>
         </div>
-        <a class="btn btn--ghost" href="year.html">See the year ahead<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
       </section>
 
-      <section class="ink-card" aria-label="Streetlights">
+      <section class="ink-card" aria-label="Visit surprises">
         <div class="row">
-          <svg width="28" height="36" viewBox="0 0 28 36" aria-hidden="true" style="flex-shrink: 0"><line x1="14" y1="36" x2="14" y2="12" stroke="#F3F0FF" stroke-width="3"/><circle class="a-fill" cx="14" cy="9" r="7"/></svg>
+          <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true" style="flex-shrink: 0"><rect x="5" y="13" width="22" height="16" rx="2" class="a-fill" stroke="#F3F0FF" stroke-width="1.5"/><rect x="3" y="9" width="26" height="6" rx="2" class="a-fill" stroke="#F3F0FF" stroke-width="1.5"/><rect x="14.5" y="9" width="3" height="20" fill="#F3F0FF"/><path d="M16 9 C11 2 6 6 11 9 M16 9 C21 2 26 6 21 9" fill="none" stroke="#F3F0FF" stroke-width="1.6"/></svg>
           <div class="stack stack-2">
-            <h2 class="form-title">Visitors light up the town</h2>
-            <span class="muted" style="font-size: 13px; line-height: 1.4">Stop by on 3 or more days in a week and a new streetlight comes on.</span>
+            <h2 class="form-title">Visits bring surprises</h2>
+            <span class="muted" style="font-size: 13px; line-height: 1.4">Stop by on 3 or more days in a week and something new arrives in town. What it is? That's the surprise.</span>
           </div>
         </div>
         <div class="inset">
           <div class="row" style="justify-content: space-between; gap: 10px">
             <span style="font-size: 14px; font-weight: 700">Your visits this week</span>
-            <span class="tag tag--status ${myLit ? 'tag--accent' : ''}" style="${myLit ? '' : 'background: var(--ink-ring); color: var(--on-ink)'}">${myLit ? 'Your light is on' : `${3 - myDays.size} more to light yours`}</span>
+            <span class="tag tag--status ${mySurprise ? 'tag--accent' : ''}" style="${mySurprise ? '' : 'background: var(--ink-ring); color: var(--on-ink)'}">${mySurprise ? 'Surprise unlocked!' : `${3 - myDays.size} more to go`}</span>
           </div>
           <div class="week-dots" role="img" aria-label="Visited on ${myDays.size} day${myDays.size === 1 ? '' : 's'} this week">
             ${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => `<div><div class="dot${myDays.has(addDays(week.start, i)) ? ' dot--on' : ''}"></div><span>${d}</span></div>`).join('')}
           </div>
+          ${mySurprise ? `<span style="font-size: 14px; font-weight: 700">${esc(surpriseTitle(mySurprise))}</span>` : ''}
         </div>
+        ${town.state.spotless ? `<p class="muted" style="font-size: 13px; line-height: 1.4; margin: 0">Spotless week! The town is sparkling after last Sunday's trash clean-up.</p>` : ''}
         <div class="row" style="gap: 10px">
-          ${othersLit.length ? `<div class="avatar-stack">${othersLit.slice(0, 4).map((m) => avatar(m, 'avatar--30')).join('')}</div>` : ''}
-          <span class="muted" style="font-size: 13px; line-height: 1.4">${othersLit.length ? `${esc(listNames(othersLit.map((m) => m.name)))} lit theirs too.` : 'No one else has lit a light this week yet.'} ${town.state.lights} light${town.state.lights === 1 ? '' : 's'} glowing in town.</span>
+          ${othersBrought.length ? `<div class="avatar-stack">${othersBrought.slice(0, 4).map((m) => avatar(m, 'avatar--30')).join('')}</div>` : ''}
+          <span class="muted" style="font-size: 13px; line-height: 1.4">${othersBrought.length ? `${esc(listNames(othersBrought.map((m) => m.name)))} brought a surprise this week too.` : 'No one else has unlocked a surprise this week yet.'}</span>
         </div>
       </section>
 
-      <section class="stack stack-10" aria-label="This year's town">
-        <h2 class="section-title">This year's town</h2>
+      <section class="stack stack-10" aria-label="Built so far">
+        <h2 class="section-title">Built so far</h2>
         <ol class="milestones">
-          ${BUILDINGS.map((b, i) => i < p.index || p.done
-            ? `<li class="done">${check}${esc(b.name)}</li>`
-            : i === p.index ? `<li class="now">${esc(b.name)}</li>` : `<li class="later">${esc(b.name)}</li>`).join('')}
+          ${BUILDINGS.slice(0, p.done ? BUILDINGS.length : p.index).map((b) => `<li class="done">${check}${esc(b.name)}</li>`).join('')}
+          ${p.done ? '' : `<li class="now">${esc(p.building.name)}</li><li class="later" aria-label="More to come, still a surprise">?</li>`}
         </ol>
       </section>
 

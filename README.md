@@ -22,7 +22,6 @@ then visit http://localhost:5173.
 | `index.html` | Group home (or a welcome when you have no group yet) |
 | `share.html` | Share a thank-you |
 | `town.html` | Your town |
-| `year.html` | The year ahead |
 | `recap.html` | Sunday recap |
 | `stats.html` | Stats |
 | `groups.html` | Your groups |
@@ -35,6 +34,7 @@ then visit http://localhost:5173.
 - `js/api.js` — all data access, with a Supabase backend and a demo backend that share one interface.
 - `js/town.js` — the town's growth rules and the drawing of the town scene.
 - `js/avatars.js` — the 20 avatars, drawn as round portraits and as figures in town.
+- `js/surprises.js` — the surprise a 3-day visit streak brings, and how each one is drawn.
 - `js/ui.js` — what every screen does on load: sign-in check, current group, today's visit.
 - `js/app.js` — the bottom tab bar and offline support; `sw.js` is the service worker.
 - `supabase/schema.sql` — tables and privacy rules.

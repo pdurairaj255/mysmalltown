@@ -120,8 +120,10 @@ Only approve emails you recognize. Anyone can request an account, but no one see
 
 ## How the town grows
 
-- Weeks run Monday to Sunday. When at least two-thirds of the group shares a thank-you in a week, the next piece of the current building goes up on Sunday night (52 pieces in all).
+This section is for you as the administrator. The app itself keeps what's coming next a surprise.
+
+- Weeks run Monday to Sunday. When at least two-thirds of the group shares a thank-you in a week, the next piece of the current building goes up on Sunday night (52 pieces in all, from first homes through a schoolhouse, hospital, main street, park, library and town square).
 - A quiet week still adds a tree or flowers. The town never goes backward.
-- Visiting on 3 or more days in a week lights a streetlight.
+- Visiting on 3 or more days in a week brings one surprise, picked at random but the same on everyone's phone: a streetlight (about 35%), a pet such as a puppy, cat, ducks, bunny or chickens (27%), a pop-up grocery stand, ice cream cart, bakery, lemonade stand or flower stall (18%), a trash clean-up Sunday that leaves the town sparkling all next week (15%), or, rarely, a friendly dinosaur or a superhero (5%).
 - Thank-yous to people outside the group bring visitors that week.
 - Each person can share one thank-you per day in each group.
