@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<title>Share a thank-you · My Small Town</title>
+<title>Share a note of appreciation · My Small Town</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
 <link rel="stylesheet" href="css/styles.css">
@@ -36,7 +36,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
     </a>
     <div class="stack stack-1">
-      <h1 class="page-title page-title--sm">Today's thank-you</h1>
+      <h1 class="page-title page-title--sm">Today's note of appreciation</h1>
       <span class="subtitle" id="subtitle"></span>
     </div>
   </header>
@@ -57,18 +57,18 @@
     if (mine) {
       main.innerHTML = `
         <div class="ink-card ink-card--lg">
-          <h2 class="form-title">You've shared today's thank-you</h2>
-          <p class="muted" style="font-size: 14px; line-height: 1.5">You thanked <strong style="color: var(--on-ink)">${esc(mine.recipient_name)}</strong>:</p>
+          <h2 class="form-title">You've shared today's note of appreciation</h2>
+          <p class="muted" style="font-size: 14px; line-height: 1.5">Your note to <strong style="color: var(--on-ink)">${esc(mine.recipient_name)}</strong>:</p>
           <p style="font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere">${esc(mine.body)}</p>
         </div>
-        <p class="note center">One thank-you per person each day. Come back tomorrow for the next one.</p>
+        <p class="note center">One note of appreciation per person each day. Come back tomorrow for the next one.</p>
         <a class="btn" href="index.html">Back to ${esc(group.name)}</a>`;
     } else {
       const others = data.members.filter((m) => m.user_id !== me.user_id);
       main.outerHTML = `
         <form id="main" class="app-main app-main--loose" style="padding-top: 10px" novalidate>
           <fieldset class="people">
-            <legend class="form-title">Who are you thanking?</legend>
+            <legend class="form-title">Who do you appreciate today?</legend>
             <div class="people-grid">
               ${others.map((m) => `
                 <button type="button" class="person" data-id="${esc(m.user_id)}" data-name="${esc(m.name)}" aria-pressed="false" style="--tint: ${tintOf(m.avatar)}">
@@ -88,15 +88,15 @@
 
           <div class="field">
             <label class="form-title" for="thanks-text">What did <span id="chosen">they</span> do?</label>
-            <textarea class="textarea" id="thanks-text" rows="5" maxlength="1000" placeholder="Write your thank-you"></textarea>
+            <textarea class="textarea" id="thanks-text" rows="5" maxlength="1000" placeholder="Write your note of appreciation"></textarea>
           </div>
 
-          <p class="note" data-when="other" hidden style="font-size: 14px; line-height: 1.5">Thank-yous to people outside the group bring visitors to your town.</p>
+          <p class="note" data-when="other" hidden style="font-size: 14px; line-height: 1.5">Notes of appreciation for people outside the group bring visitors to your town.</p>
           <p class="form-error" role="alert" hidden></p>
 
           <div class="stack stack-10" style="margin-top: auto">
-            <button type="submit" class="btn">Share thank-you</button>
-            <p class="note center">One thank-you per person each day.</p>
+            <button type="submit" class="btn">Share note of appreciation</button>
+            <p class="note center">One note of appreciation per person each day.</p>
           </div>
         </form>`;
 
@@ -120,7 +120,7 @@
         const body = document.getElementById('thanks-text').value.trim();
         const outside = document.getElementById('who').value.trim();
         const fail = (msg) => { error.textContent = msg; error.hidden = false; };
-        if (!picked) return fail('Choose who you are thanking.');
+        if (!picked) return fail('Choose who you appreciate.');
         if (!picked.dataset.id && !outside) return fail('Tell us who it was.');
         if (!body) return fail('Write a few words about what they did.');
         const btn = form.querySelector('button[type=submit]');

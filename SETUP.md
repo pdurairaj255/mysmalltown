@@ -108,7 +108,7 @@ where id = (select id from auth.users where email = 'their.email@example.com');
 
 Or, without SQL: **Table Editor → profiles**, find the person by name, double-click their **approved** cell, choose **TRUE**, and save.
 
-**To remove someone's access** later, run the same update with `approved = false`. They immediately lose access to every group, though their past thank-yous stay.
+**To remove someone's access** later, run the same update with `approved = false`. They immediately lose access to every group, though their past notes of appreciation stay.
 
 Only approve emails you recognize. Anyone can request an account, but no one sees anything until you say yes.
 
@@ -122,8 +122,8 @@ Only approve emails you recognize. Anyone can request an account, but no one see
 
 This section is for you as the administrator. The app itself keeps what's coming next a surprise.
 
-- Weeks run Monday to Sunday. When at least two-thirds of the group shares a thank-you in a week, the next piece of the current building goes up on Sunday night (52 pieces in all, from first homes through a schoolhouse, hospital, main street, park, library and town square).
+- Weeks run Monday to Sunday. When at least two-thirds of the group shares a note of appreciation in a week, the next piece of the current building goes up on Sunday night (52 pieces in all, from first homes through a schoolhouse, hospital, main street, park, library and town square).
 - A quiet week still adds a tree or flowers. The town never goes backward.
 - Visiting on 3 or more days in a week brings one surprise, picked at random but the same on everyone's phone: a streetlight (about 35%), a pet such as a puppy, cat, ducks, bunny or chickens (27%), a pop-up grocery stand, ice cream cart, bakery, lemonade stand or flower stall (18%), a trash clean-up Sunday that leaves the town sparkling all next week (15%), or, rarely, a friendly dinosaur or a superhero (5%).
-- Thank-yous to people outside the group bring visitors that week.
-- Each person can share one thank-you per day in each group.
+- Notes of appreciation for people outside the group bring visitors that week.
+- Each person can share one note of appreciation per day in each group.

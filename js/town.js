@@ -3,12 +3,12 @@
 // Rules (the same ones the Year ahead screen explains):
 // - Weeks run Monday–Sunday, counted from the week the group started.
 // - When a week ends with at least two-thirds of the group having shared a
-//   thank-you, the next piece of the current building goes up. 52 pieces in all.
+//   note of appreciation, the next piece of the current building goes up. 52 pieces in all.
 // - A quiet week still adds something small (a tree or a flower bed).
 // - Anyone who visits on 3 or more days in a week brings a surprise (see
 //   surprises.js): a streetlight, a pet, a pop-up shop, a clean-up Sunday that
 //   leaves the town spotless all next week, or, rarely, a dinosaur or superhero.
-// - Thank-yous to people outside the group bring visitors that week.
+// - Notes of appreciation for people outside the group bring visitors that week.
 // - Each townsperson is at home, out and about, helping or leading, based on
 //   what they did this week.
 
@@ -305,21 +305,21 @@ export function weekChanges(town, week) {
     items.push({
       kind: 'build',
       title: pieceInfo(week.newPiece).phrase,
-      detail: `${week.sharers.size} of ${week.members.length} shared a thank-you, meeting the goal of ${week.goal}` +
-        (credit ? `. Last one: ${possessive(nameOf(town, credit.author_id))} thank-you to ${credit.recipient_name}` : '')
+      detail: `${week.sharers.size} of ${week.members.length} shared a note of appreciation, meeting the goal of ${week.goal}` +
+        (credit ? `. Last one: ${possessive(nameOf(town, credit.author_id))} note of appreciation for ${credit.recipient_name}` : '')
     });
   } else if (week.newExtra !== undefined) {
     items.push({
       kind: 'extra',
       title: extraPhrase(week.newExtra),
-      detail: `A quiet week: ${week.sharers.size} of ${week.goal} needed shared a thank-you. The town never goes backward.`
+      detail: `A quiet week: ${week.sharers.size} of ${week.goal} needed shared a note of appreciation. The town never goes backward.`
     });
   }
   for (const x of week.surprises) {
     items.push({ kind: x.kind, title: surpriseTitle(x), detail: surpriseDetail(x, nameOf(town, x.user_id)) });
   }
   for (const t of week.outsiders) {
-    items.push({ kind: 'visitor', title: 'A traveler passed through town', detail: `From ${possessive(nameOf(town, t.author_id))} thank-you to ${t.recipient_name}` });
+    items.push({ kind: 'visitor', title: 'A traveler passed through town', detail: `From ${possessive(nameOf(town, t.author_id))} note of appreciation for ${t.recipient_name}` });
   }
   return items;
 }
@@ -337,7 +337,7 @@ function buildNews(town) {
     for (const x of w.surprises) {
       news.push({ day: x.day, kind: x.kind, member: town.members.find((m) => m.user_id === x.user_id), text: `${surpriseTitle(x).replace(/[.!]$/, '')}, thanks to ${possessive(nameOf(town, x.user_id))} visits.` });
     }
-    for (const t of w.outsiders) news.push({ day: t.day, kind: 'visitor', text: `A traveler arrived, thanks to ${possessive(nameOf(town, t.author_id))} thank-you to ${t.recipient_name}.` });
+    for (const t of w.outsiders) news.push({ day: t.day, kind: 'visitor', text: `A traveler arrived, thanks to ${possessive(nameOf(town, t.author_id))} note of appreciation for ${t.recipient_name}.` });
   }
   return news.sort((a, b) => b.day.localeCompare(a.day));
 }

@@ -64,7 +64,7 @@
       main.innerHTML = `
         <div class="ink-card ink-card--lg">
           <h2 class="form-title">Start with your people</h2>
-          <p class="muted" style="font-size: 14px; line-height: 1.5">A group is the family or friends you share thank-yous with. Your group gets its own town, which starts as an empty meadow and grows every week you share.</p>
+          <p class="muted" style="font-size: 14px; line-height: 1.5">A group is the family or friends you share notes of appreciation with. Your group gets its own town, which starts as an empty meadow and grows every week you share.</p>
         </div>
         <a class="btn" href="new-group.html">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -105,11 +105,11 @@
         </a>` : ''}
 
         ${sharedToday
-          ? `<a class="btn btn--outline" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>You shared today's thank-you</a>`
-          : `<a class="btn" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Share today's thank-you</a>`}
+          ? `<a class="btn btn--outline" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>You shared today's note of appreciation</a>`
+          : `<a class="btn" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Share today's note of appreciation</a>`}
 
-        <section class="stack stack-12" aria-label="This week's thank-yous">
-          <h2 class="section-title">This week's thank-yous</h2>
+        <section class="stack stack-12" aria-label="This week's notes of appreciation">
+          <h2 class="section-title">This week's notes of appreciation</h2>
           ${feed.length ? feed.map((t) => {
             const author = nameOf(t.author_id) || { name: 'Someone' };
             return `
@@ -117,7 +117,7 @@
               <div class="row" style="gap: 10px">
                 ${avatar(author)}
                 <div class="stack stack-4">
-                  <p class="who"><strong>${esc(author.user_id === me.user_id ? 'You' : author.name)}</strong> thanked <strong>${esc(t.recipient_id === me.user_id ? 'you' : t.recipient_name)}</strong> · ${relativeDay(t.day, today)}</p>
+                  <p class="who"><strong>${esc(author.user_id === me.user_id ? 'You' : author.name)}</strong> appreciated <strong>${esc(t.recipient_id === me.user_id ? 'you' : t.recipient_name)}</strong> · ${relativeDay(t.day, today)}</p>
                   ${t.recipient_id ? '' : '<span class="badge">Outside the group</span>'}
                 </div>
               </div>
@@ -125,8 +125,8 @@
             </article>`;
           }).join('') : `
             <div class="empty">
-              <span class="item-title">No thank-yous yet this week</span>
-              <span class="note">${data.members.length > 1 ? 'Be the first. Every thank-you helps the town grow.' : `It's just you so far. Invite your family from the Groups tab, then share the first thank-you.`}</span>
+              <span class="item-title">No notes of appreciation yet this week</span>
+              <span class="note">${data.members.length > 1 ? 'Be the first. Every note helps the town grow.' : `It's just you so far. Invite your family from the Groups tab, then share the first note of appreciation.`}</span>
             </div>`}
         </section>`;
     }

@@ -1,6 +1,6 @@
 # My Small Town
 
-A phone-first web app where a group (a family, roommates, a book club) shares one thank-you a day, and every week of thank-yous grows the group's shared town.
+A phone-first web app where a group (a family, roommates, a book club) shares one note of appreciation a day, and every week of appreciation grows the group's shared town.
 
 Plain HTML, CSS and JavaScript with no build step. Data and email sign-in come from [Supabase](https://supabase.com); see **[SETUP.md](SETUP.md)** to connect it. Without it, the app runs in demo mode with data kept on the device.
 
@@ -20,7 +20,7 @@ then visit http://localhost:5173.
 | --- | --- |
 | `signin.html` | Email sign-in, your name and your avatar |
 | `index.html` | Group home (or a welcome when you have no group yet) |
-| `share.html` | Share a thank-you |
+| `share.html` | Share a note of appreciation |
 | `town.html` | Your town |
 | `recap.html` | Sunday recap |
 | `stats.html` | Stats |

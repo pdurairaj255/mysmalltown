@@ -96,7 +96,7 @@ function supabaseBackend(sb) {
     async shareThanks(row) {
       const { error } = await sb.from('thanks').insert({ ...row, author_id: cachedUser.id });
       if (error) {
-        if (error.code === '23505') throw new Error("You've already shared today's thank-you in this group.");
+        if (error.code === '23505') throw new Error("You've already shared today's note of appreciation in this group.");
         fail(error);
       }
     },
@@ -225,7 +225,7 @@ function demoBackend() {
       const db = load();
       const uid = me(db);
       if (db.thanks.some((t) => t.group_id === row.group_id && t.author_id === uid && t.day === row.day)) {
-        throw new Error("You've already shared today's thank-you in this group.");
+        throw new Error("You've already shared today's note of appreciation in this group.");
       }
       db.thanks.push({ id: uuid(), ...row, author_id: uid, created_at: new Date().toISOString() });
       save(db);

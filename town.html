@@ -113,7 +113,7 @@
       <section class="card" aria-label="Your townspeople">
         <div class="stack stack-4">
           <h2 class="section-title">Your townspeople</h2>
-          <p class="note">Everyone in the group lives here. The more thank-yous someone shares and receives, the busier they are in town.</p>
+          <p class="note">Everyone in the group lives here. The more notes of appreciation someone shares and receives, the busier they are in town.</p>
         </div>
         <ul class="stack">
           ${people.map((m) => `
@@ -130,7 +130,7 @@
             <li class="bg-mint-tint">Helping</li><li class="sep" aria-hidden="true">›</li>
             <li class="bg-accent">Leading</li>
           </ol>
-          <span class="item-sub" style="line-height: 1.45">Visiting gets you out and about. Sharing a thank-you puts you to work, and sharing and receiving several puts you in charge of a build. A new week starts everyone fresh.</span>
+          <span class="item-sub" style="line-height: 1.45">Visiting gets you out and about. Sharing a note of appreciation puts you to work, and sharing and receiving several puts you in charge of a build. A new week starts everyone fresh.</span>
         </div>
       </section>
 
@@ -138,7 +138,7 @@
         ${p.done ? `
           <span class="eyebrow">Your town is complete</span>
           <h2 style="font-family: var(--font-display); font-size: 21px; font-weight: 800">Every building is finished</h2>
-          <p class="item-sub">Keep sharing thank-yous to keep your townspeople busy, and keep visiting for more surprises.</p>` : `
+          <p class="item-sub">Keep sharing notes of appreciation to keep your townspeople busy, and keep visiting for more surprises.</p>` : `
           <div class="row" style="justify-content: space-between; align-items: baseline">
             <span class="eyebrow">Building now</span>
             <span class="tag tag--status ${week.goalMet ? 'bg-mint-tint' : 'bg-sun-tint'}">${week.goalMet ? 'On track' : `${left} more needed`}</span>
@@ -150,7 +150,7 @@
             <span style="font-size: 14px; font-weight: 700">This week's goal</span>
             <span style="font-size: 13px; font-weight: 800; color: ${week.goalMet ? '#1E7A55' : 'var(--muted)'}">${week.goalMet ? 'Met' : 'Not yet'}</span>
           </div>
-          <span class="item-sub" style="font-size: 14px; line-height: 1.45">${week.goal} of ${week.members.length} ${week.members.length === 1 ? 'person shares' : 'people share'} a thank-you by Sunday. ${week.sharers.size} ${week.sharers.size === 1 ? 'has' : 'have'} so far${week.goalMet ? ', so the next piece goes up Sunday night.' : '.'}</span>
+          <span class="item-sub" style="font-size: 14px; line-height: 1.45">${week.goal} of ${week.members.length} ${week.members.length === 1 ? 'person shares' : 'people share'} a note of appreciation by Sunday. ${week.sharers.size} ${week.sharers.size === 1 ? 'has' : 'have'} so far${week.goalMet ? ', so the next piece goes up Sunday night.' : '.'}</span>
         </div>
       </section>
 

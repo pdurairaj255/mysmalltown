@@ -86,29 +86,29 @@
         <div class="stack stack-8">
           <div class="row" style="align-items: baseline; gap: 8px">
             <span class="num big-num">${mine.size}</span>
-            <span style="font-size: 16px; font-weight: 600">of 7 thank-yous shared</span>
+            <span style="font-size: 16px; font-weight: 600">of 7 notes of appreciation shared</span>
           </div>
-          <div class="week-dots week-dots--lg" role="img" aria-label="Shared a thank-you on ${plural(mine.size, 'day')} this week">
+          <div class="week-dots week-dots--lg" role="img" aria-label="Shared a note of appreciation on ${plural(mine.size, 'day')} this week">
             ${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => `<div><div class="dot${mine.has(days[i]) ? ' dot--on' : ''}"></div><span>${d}</span></div>`).join('')}
           </div>
         </div>
         <div class="tiles tiles--2">
           <div class="tile"><span class="num">${myVisits}</span><span class="lbl">${myVisits === 1 ? 'day' : 'days'} you visited</span></div>
-          <div class="tile"><span class="num">${received}</span><span class="lbl">thank-you${received === 1 ? '' : 's'} for you</span></div>
+          <div class="tile"><span class="num">${received}</span><span class="lbl">note${received === 1 ? '' : 's'} for you</span></div>
         </div>
       </section>
 
       <section class="card card--lg" aria-label="The group this week">
         <h2 class="eyebrow">The group this week</h2>
         <div class="tiles tiles--3">
-          <div class="tile bg-coral-tint"><span class="num">${week.thanks.length}</span><span class="lbl">thank-yous of ${data.members.length * 7} possible</span></div>
+          <div class="tile bg-coral-tint"><span class="num">${week.thanks.length}</span><span class="lbl">notes shared, out of ${data.members.length * 7} possible</span></div>
           <div class="tile bg-sky-tint"><span class="num">${groupVisits}</span><span class="lbl">visits</span></div>
           <div class="tile bg-violet-tint"><span class="num">${week.surprises.length}</span><span class="lbl">surprise${week.surprises.length === 1 ? '' : 's'}</span></div>
         </div>
-        <div class="people-table" role="table" aria-label="Each person's thank-yous and visits this week">
+        <div class="people-table" role="table" aria-label="Each person's notes of appreciation and visits this week">
           <div role="row" class="head">
             <span role="columnheader" style="grid-column: span 2">Person</span>
-            <span role="columnheader">Thank-yous</span>
+            <span role="columnheader">Notes</span>
             <span role="columnheader" style="text-align: right">Visits</span>
           </div>
           ${rows.map((p) => `
@@ -121,7 +121,7 @@
               <span role="cell" style="font-size: 15px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums">${p.visits}</span>
             </div>`).join('')}
         </div>
-        <span class="meta">Each dot is a day with a thank-you, up to one a day.</span>
+        <span class="meta">Each dot is a day with a note of appreciation, up to one a day.</span>
       </section>
 
       <section class="card card--lg bg-mint-tint" aria-label="Since the start">
@@ -130,13 +130,13 @@
           <span style="font-size: 13px; line-height: 1.45; color: var(--forest-ink)">Counting since ${shortDate(town.start)}, the week ${esc(group.town_name)} was founded.</span>
         </div>
         <div class="tiles tiles--3">
-          <div class="tile bg-white"><span class="num">${data.thanks.length}</span><span class="lbl">thank-yous</span></div>
+          <div class="tile bg-white"><span class="num">${data.thanks.length}</span><span class="lbl">notes of appreciation</span></div>
           <div class="tile bg-white"><span class="num">${data.visits.length}</span><span class="lbl">visits</span></div>
           <div class="tile bg-white"><span class="num">${town.state.pieces}</span><span class="lbl">pieces built</span></div>
         </div>
         <div class="inset bg-white" style="border-radius: 14px; padding: 14px 12px 10px">
-          <span style="font-size: 13px; font-weight: 700">Thank-yous each week</span>
-          <div class="chart" style="${cols}" role="img" aria-label="Group thank-yous by week, weeks ${recent[0].number} to ${week.number}: ${recent.map((w) => w.thanks.length).join(', ')}">
+          <span style="font-size: 13px; font-weight: 700">Notes of appreciation each week</span>
+          <div class="chart" style="${cols}" role="img" aria-label="Group notes of appreciation by week, weeks ${recent[0].number} to ${week.number}: ${recent.map((w) => w.thanks.length).join(', ')}">
             ${recent.map((w, i) => `<div${i === recent.length - 1 ? ' class="last"' : ''}><span>${w.thanks.length}</span><div class="bar" style="height: ${Math.round((w.thanks.length / max) * 80)}px"></div></div>`).join('')}
           </div>
           <div class="axis" style="${cols}" aria-hidden="true">
