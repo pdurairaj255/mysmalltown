@@ -14,14 +14,9 @@ Until it's connected, the app runs in **demo mode**: everything stays on the dev
 1. In the project, open **SQL Editor → New query**.
 2. Paste the whole contents of [`supabase/schema.sql`](supabase/schema.sql) and click **Run**. It should say "Success. No rows returned."
 
-This creates the tables and the privacy rules: people can only see groups they belong to, and the people in those groups.
+This creates the tables and the privacy rules: people can only see groups they belong to, and the people in those groups, and nobody can do anything until you approve their account.
 
-> **Ran an earlier version of the schema?** People now pick an avatar instead of a color. Run this once in the SQL Editor to add it:
->
-> ```sql
-> alter table public.profiles add column if not exists avatar text not null default 'adult-1'
->   check (avatar ~ '^[a-z]+-[0-9]{1,2}$');
-> ```
+> **Already ran an earlier version of the schema?** Don't run `schema.sql` again. Instead, paste [`supabase/migrations/002_approval_and_invite_codes.sql`](supabase/migrations/002_approval_and_invite_codes.sql) into a new query and click **Run**. It adds avatars, account approval and the longer invite codes, and is safe to run more than once.
 
 ## 3. Set up sign-in emails
 
@@ -82,12 +77,46 @@ Right now the app doesn't know your Supabase project exists, so it runs in demo 
 
 Open the app. If the dark **"Demo mode"** strip at the top is gone and the sign-in page says **"Email me a sign-in code"**, the app is connected.
 
-## 5. Invite your family
+## 5. Approve yourself, then invite your family
 
-1. Open the app, sign in with your email, and pick your name and townsperson (20 avatars: kids, teens, adults and grandparents).
-2. Tap **Start a group**, name it, and choose a town name and color.
-3. On the **Groups** tab, tap **Share link** (or **Copy link**) and send it to your family. They sign in with their own email, and the link fills in the invite code for them.
-4. To install it on a phone: on iPhone, open the link in Safari and tap **Share → Add to Home Screen**. On Android, open it in Chrome and tap **⋮ → Install app**.
+1. Open the app, sign in with your email, and pick your name and townsperson (20 avatars: kids, teens, adults and grandparents). You'll land on an **"Almost there"** screen, because every new account, yours included, needs approval.
+2. Approve yourself (see **Approving people** below), then tap **Check again** in the app.
+3. Tap **Start a group**, name it, and choose a town name and color.
+4. On the **Groups** tab, tap **Share link** (or **Copy link**) and send it to your family. They sign in with their own email, pick their avatar, and wait for you to approve them. Once approved, the link fills in the invite code for them.
+5. To install it on a phone: on iPhone, open the link in Safari and tap **Share → Add to Home Screen**. On Android, open it in Chrome and tap **⋮ → Install app**.
+
+## Approving people
+
+New accounts can't see, create or join anything until you approve them. The database enforces this, so it can't be skipped from the app.
+
+**To see who's waiting**, run this in **SQL Editor → New query**:
+
+```sql
+select u.email, p.display_name, p.created_at
+from public.profiles p
+join auth.users u on u.id = p.id
+where not p.approved
+order by p.created_at;
+```
+
+**To approve someone**, put their email in this and run it:
+
+```sql
+update public.profiles set approved = true
+where id = (select id from auth.users where email = 'their.email@example.com');
+```
+
+Or, without SQL: **Table Editor → profiles**, find the person by name, double-click their **approved** cell, choose **TRUE**, and save.
+
+**To remove someone's access** later, run the same update with `approved = false`. They immediately lose access to every group, though their past thank-yous stay.
+
+Only approve emails you recognize. Anyone can request an account, but no one sees anything until you say yes.
+
+## Privacy notes
+
+- **Search engines:** every page tells search engines not to list, follow or archive it. Anyone with the link can still open the sign-in page, but they can't get further without your approval.
+- **Invite codes** look like `REYES-7KQ3-XM9P`: 8 random characters, about 850 billion possibilities, so they can't be guessed. Dashes and capital letters don't matter when typing one in.
+- **Never** put the `service_role` or secret key in the app, and turn on two-factor sign-in for your Supabase and GitHub accounts.
 
 ## How the town grows
 

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
 <title>Your groups · My Small Town</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
@@ -20,8 +21,8 @@
   .group[aria-current="true"] { border: 2.5px solid var(--ink); }
   .group svg { flex-shrink: 0; }
   .group .name { font-size: 16px; font-weight: 700; }
-  .invite-code { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--ink-raised); border-radius: 12px; padding: 8px 8px 8px 16px; }
-  .invite-code .code { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: 0.12em; overflow-wrap: anywhere; }
+  .invite-code { display: flex; flex-direction: column; gap: 10px; background: var(--ink-raised); border-radius: 12px; padding: 14px; }
+  .invite-code .code { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: 0.08em; text-align: center; overflow-wrap: anywhere; }
   .small-btn { min-height: 44px; padding: 0 16px; border-radius: 10px; border: 0; background: var(--accent); color: var(--ink); font: 700 15px var(--font-body); cursor: pointer; flex-shrink: 0; }
   .join-row { display: flex; gap: 10px; }
   .join-row .input { flex: 1; min-width: 0; min-height: 48px; border-radius: 12px; font-weight: 500; font-size: 16px; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -76,17 +77,17 @@
       ${group ? `
       <section class="ink-card ink-card--lg" aria-label="Invite people">
         <h2 class="form-title">Invite to ${esc(group.name)}</h2>
-        <p class="muted" style="font-size: 14px; line-height: 1.5">Send this link or code to anyone you'd like to add. They sign in with just their email, then join with the code.</p>
+        <p class="muted" style="font-size: 14px; line-height: 1.5">Send this link or code to anyone you'd like to add. They sign in with their email and can join once their account is approved.</p>
         <div class="invite-code">
           <span class="code">${esc(group.invite_code)}</span>
-          <button type="button" class="small-btn" id="copy-link">${navigator.share ? 'Share link' : 'Copy link'}</button>
+          <button type="button" class="small-btn" id="copy-link" style="width: 100%">${navigator.share ? 'Share link' : 'Copy link'}</button>
         </div>
       </section>` : ''}
 
       <form class="field" id="join" style="gap: 10px" novalidate>
         <label class="form-title" for="join-code">Join with a code</label>
         <div class="join-row">
-          <input class="input" id="join-code" type="text" placeholder="Enter code" autocomplete="off" value="${esc(joinCode)}">
+          <input class="input" id="join-code" type="text" placeholder="TOWN-XXXX-XXXX" autocomplete="off" value="${esc(joinCode)}">
           <button type="submit" class="small-btn">Join</button>
         </div>
         <p class="form-error" role="alert" hidden></p>

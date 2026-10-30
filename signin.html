@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
 <title>Sign in · My Small Town</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
@@ -66,6 +67,23 @@
       <p class="form-error" role="alert" hidden></p>
       <button type="submit" class="btn">Continue</button>
     </form>
+
+    <section id="waiting-step" class="stack stack-14" hidden aria-live="polite">
+      <div class="ink-card ink-card--lg">
+        <div class="row">
+          <span class="avatar avatar--pic avatar--40" id="waiting-avatar" aria-hidden="true"></span>
+          <h2 class="form-title" id="waiting-title">Thanks for signing up</h2>
+        </div>
+        <p class="muted" style="font-size: 14px; line-height: 1.5">To keep every family's town private, the person who runs My Small Town approves each new account. Let them know you signed up with <strong style="color: var(--on-ink)" id="waiting-email"></strong>.</p>
+      </div>
+      <p class="note center">Once you're approved, come back and tap below to start or join a group.</p>
+      <button type="button" class="btn" id="check-again">Check again</button>
+      <div class="row" style="justify-content: space-between">
+        <button type="button" class="link-btn" id="edit-profile">Edit name or avatar</button>
+        <button type="button" class="link-btn" id="waiting-sign-out">Sign out</button>
+      </div>
+      <p class="form-error" role="alert" hidden></p>
+    </section>
   </main>
 </div>
 <script src="js/app.js"></script>
@@ -75,14 +93,14 @@
 
   const params = new URLSearchParams(location.search);
   const next = safeNext(params.get('next'));
-  const steps = { email: document.getElementById('email-step'), code: document.getElementById('code-step'), profile: document.getElementById('profile-step') };
+  const steps = { email: document.getElementById('email-step'), code: document.getElementById('code-step'), profile: document.getElementById('profile-step'), waiting: document.getElementById('waiting-step') };
   const title = document.getElementById('title');
   let email = '';
 
   function show(step) {
     Object.entries(steps).forEach(([k, el]) => { el.hidden = k !== step; });
-    title.textContent = { email: 'Welcome', code: 'Check your email', profile: 'About you' }[step];
-    steps[step].querySelector('input')?.focus();
+    title.textContent = { email: 'Welcome', code: 'Check your email', profile: 'About you', waiting: 'Almost there' }[step];
+    steps[step].querySelector('input, button')?.focus();
   }
   function setError(form, message) {
     const el = form.querySelector('.form-error');
@@ -109,10 +127,22 @@
       </div>
     </fieldset>`).join('');
 
+  // New accounts wait here until an administrator approves them.
+  function showWaiting(user, profile) {
+    document.getElementById('waiting-title').textContent = `Thanks, ${profile.display_name}`;
+    document.getElementById('waiting-email').textContent = user.email || 'your email';
+    document.getElementById('waiting-avatar').innerHTML = portrait(profile.avatar);
+    show('waiting');
+  }
+
   async function afterSignIn() {
     const user = await api.getUser();
     const profile = await api.getProfile(user.id);
-    if (profile && params.get('step') !== 'profile') { location.replace(next); return; }
+    if (profile && params.get('step') !== 'profile') {
+      if (profile.approved) location.replace(next);
+      else showWaiting(user, profile);
+      return;
+    }
     if (profile) {
       document.getElementById('display-name').value = profile.display_name;
       const radio = document.querySelector(`input[name=avatar][value="${CSS.escape(profile.avatar || '')}"]`);
@@ -163,8 +193,30 @@
       if (!avatar) throw new Error('Pick the townsperson who looks most like you.');
       const user = await api.getUser();
       await api.saveProfile(user.id, { display_name, avatar });
-      location.replace(next);
+      const saved = await api.getProfile(user.id);
+      if (saved.approved) location.replace(next);
+      else showWaiting(user, saved);
     });
+  });
+
+  document.getElementById('check-again').addEventListener('click', async () => {
+    const user = await api.getUser();
+    const profile = await api.getProfile(user.id);
+    if (profile?.approved) { location.replace(next); return; }
+    const err = steps.waiting.querySelector('.form-error');
+    err.textContent = 'Not approved yet. Check again a little later.';
+    err.hidden = false;
+  });
+  document.getElementById('edit-profile').addEventListener('click', async () => {
+    const profile = await api.getProfile((await api.getUser()).id);
+    document.getElementById('display-name').value = profile.display_name;
+    const radio = document.querySelector(`input[name=avatar][value="${CSS.escape(profile.avatar || '')}"]`);
+    if (radio) radio.checked = true;
+    show('profile');
+  });
+  document.getElementById('waiting-sign-out').addEventListener('click', async () => {
+    await api.signOut();
+    location.replace('signin.html');
   });
 
   // Already signed in (or arriving from the email link)? Skip ahead.

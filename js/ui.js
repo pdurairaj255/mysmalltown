@@ -74,6 +74,10 @@ export async function boot({ needGroup = true } = {}) {
     location.replace(`signin.html?step=profile&next=${encodeURIComponent(herePage())}`);
     return never();
   }
+  if (!profile.approved) {
+    location.replace(`signin.html?step=waiting&next=${encodeURIComponent(herePage())}`);
+    return never();
+  }
   const groups = await api.listMyGroups(user.id);
   const group = groups.find((g) => g.id === store.get('mst.currentGroup')) || groups[0] || null;
   if (!group) {

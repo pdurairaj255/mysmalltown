@@ -36,7 +36,7 @@ function supabaseBackend(sb) {
     },
 
     async getProfile(userId) {
-      const { data, error } = await sb.from('profiles').select('id, display_name, avatar').eq('id', userId).maybeSingle();
+      const { data, error } = await sb.from('profiles').select('id, display_name, avatar, approved').eq('id', userId).maybeSingle();
       if (error) fail(error);
       return data;
     },
@@ -111,6 +111,15 @@ function supabaseBackend(sb) {
 
 // ---------- Demo (this browser only) ----------
 
+// Same shape as the database's new_invite_code(): REYES-7KQ3-XM9P.
+function inviteCode(name) {
+  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const prefix = (name.replace(/^\s*the\s+/i, '').replace(/[^A-Za-z]/g, '').slice(0, 5) || 'TOWN').toUpperCase();
+  const chars = Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => alphabet[b % alphabet.length]).join('');
+  return `${prefix}-${chars.slice(0, 4)}-${chars.slice(4)}`;
+}
+const squash = (code) => code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
 function demoBackend() {
   const KEY = 'mst.demo';
   const empty = () => ({ users: {}, session: null, profiles: {}, groups: [], memberships: [], thanks: [], visits: [] });
@@ -149,7 +158,8 @@ function demoBackend() {
 
     async getProfile(userId) {
       const p = load().profiles[userId];
-      return p ? { id: userId, ...p } : null;
+      // Demo mode has no administrator: everyone is approved unless a test sets approved: false.
+      return p ? { id: userId, ...p, approved: p.approved !== false } : null;
     },
 
     async saveProfile(userId, { display_name, avatar }) {
@@ -168,10 +178,8 @@ function demoBackend() {
     async createGroup({ name, town_name, accent }) {
       const db = load();
       const uid = me(db);
-      const prefix = (name.replace(/^\s*the\s+/i, '').replace(/[^A-Za-z]/g, '').slice(0, 5) || 'TOWN').toUpperCase();
       let code;
-      do { code = `${prefix}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`; }
-      while (db.groups.some((g) => g.invite_code === code));
+      do { code = inviteCode(name); } while (db.groups.some((g) => g.invite_code === code));
       const now = new Date().toISOString();
       const group = { id: uuid(), name: name.trim(), town_name: town_name.trim(), accent, invite_code: code, created_by: uid, created_at: now };
       db.groups.push(group);
@@ -183,7 +191,7 @@ function demoBackend() {
     async joinGroup(code) {
       const db = load();
       const uid = me(db);
-      const group = db.groups.find((g) => g.invite_code === code.trim().toUpperCase());
+      const group = db.groups.find((g) => squash(g.invite_code) === squash(code));
       if (!group) throw new Error('No group has that code. Check it and try again.');
       if (!isMember(db, group.id, uid)) {
         db.memberships.push({ group_id: group.id, user_id: uid, joined_at: new Date().toISOString() });

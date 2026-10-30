@@ -1,0 +1,3 @@
+# My Small Town is a private family app. Please don't crawl or list it.
+User-agent: *
+Disallow: /
