@@ -42,20 +42,45 @@ This creates the tables and the privacy rules: people can only see groups they b
 
 > **Email limits.** Supabase's built-in email service only sends a few emails per hour, which is fine while a handful of family members sign in once each. If people hit "rate limit" errors, connect a free email service such as [Resend](https://resend.com) under **Authentication → Emails → SMTP Settings**.
 
-## 4. Connect the app
+## 4. Connect the app to your Supabase project
 
-1. Open **Project Settings → API** (or **API Keys**).
-2. Copy the **Project URL** and the **anon public** key (newer projects call it the **publishable** key).
-3. Paste them into [`js/config.js`](js/config.js):
+Right now the app doesn't know your Supabase project exists, so it runs in demo mode. This step gives it two pieces of information, like an address and a door key, so it can find your project and talk to it.
+
+### 4a. Copy the two values from Supabase
+
+1. In your Supabase project, click the **gear icon (Project Settings)** at the bottom of the left sidebar.
+2. Click **Data API**. Copy the **Project URL**. It looks like `https://abcdefghijkl.supabase.co`.
+3. Click **API Keys**. Copy the **anon public** key: a long string that starts with `eyJ`. (Some newer projects show a **Publishable key** starting with `sb_publishable_` instead; that works the same way.)
+
+> These two values are meant to be public: anyone using the app gets them anyway. Your data stays private because of the rules you added in step 2.
+> On the same page there's also a **service_role** or **secret** key. **Never copy that one** into the app or share it with anyone. It bypasses all the privacy rules.
+
+### 4b. Put them in the app
+
+**Easiest:** paste both values to Claude in the chat, and Claude will put them in the app and publish the update.
+
+**Or do it yourself:**
+
+1. Open the file `js/config.js` in the My Small Town folder with Notepad (right-click → Open with → Notepad).
+2. It has two lines with empty quotes:
 
    ```js
-   export const SUPABASE_URL = 'https://abcdefgh.supabase.co';
-   export const SUPABASE_ANON_KEY = 'eyJhbGciOi...';
+   export const SUPABASE_URL = '';
+   export const SUPABASE_ANON_KEY = '';
    ```
 
-   This key is designed to be public. The privacy rules from step 2 are what keep each group's data private, so it's safe to commit even in a public repository. Never put the **service_role** or **secret** key in the app.
+   Paste each value between its pair of quotes, so it looks like this (with your own values):
 
-4. Commit and push. Once the site updates, the demo banner disappears.
+   ```js
+   export const SUPABASE_URL = 'https://abcdefghijkl.supabase.co';
+   export const SUPABASE_ANON_KEY = 'eyJhbGciOi...the rest of the long key...';
+   ```
+
+3. Save the file, then commit and push it to GitHub (GitHub Desktop or `git push`) so the live site gets the change.
+
+### 4c. Check it worked
+
+Open the app. If the dark **"Demo mode"** strip at the top is gone and the sign-in page says **"Email me a sign-in code"**, the app is connected.
 
 ## 5. Invite your family
 
