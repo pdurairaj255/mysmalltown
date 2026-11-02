@@ -44,6 +44,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
     </a>
   </header>
+  <a class="who-chip" id="who" href="who.html" hidden></a>
 
   <main class="app-main" id="main" style="padding-top: 0"><p class="note">Loading…</p></main>
 
@@ -58,7 +59,22 @@
   const main = document.getElementById('main');
   try {
     const ctx = await boot({ needGroup: false });
-    if (!ctx.group) {
+    if (ctx.hasKids) {
+      const who = document.getElementById('who');
+      who.innerHTML = `${avatar(ctx.person)}<span>Using as <strong>${esc(ctx.person.display_name)}</strong> · Switch</span>`;
+      who.hidden = false;
+    }
+    if (!ctx.group && ctx.person.is_kid) {
+      document.getElementById('eyebrow').textContent = `Hi, ${ctx.person.display_name}`;
+      document.getElementById('title').textContent = 'Welcome to town';
+      main.innerHTML = `
+        <div class="ink-card ink-card--lg">
+          <h2 class="form-title">${esc(ctx.person.display_name)} isn't in a group yet</h2>
+          <p class="muted" style="font-size: 14px; line-height: 1.5">Ask a grown-up to add you to the family's group, or join with an invite code.</p>
+        </div>
+        <a class="btn" href="groups.html#join">I have an invite code</a>
+        <a class="btn btn--outline btn--md" href="who.html">Switch person</a>`;
+    } else if (!ctx.group) {
       document.getElementById('eyebrow').textContent = `Hi, ${ctx.profile.display_name}`;
       document.getElementById('title').textContent = 'Welcome to town';
       main.innerHTML = `

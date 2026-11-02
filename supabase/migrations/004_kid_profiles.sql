@@ -1,0 +1,343 @@
+-- My Small Town — update 004: kid profiles under a parent's account.
+-- Run once, after 003: Supabase dashboard → SQL Editor → New query → paste → Run.
+-- Safe to run more than once.
+
+-- Profiles can now be kids, who have no sign-in of their own: each profile
+-- belongs to an account (itself for grown-ups, a parent for kids).
+alter table public.profiles drop constraint if exists profiles_id_fkey;
+alter table public.profiles add column if not exists account_id uuid;
+update public.profiles set account_id = id where account_id is null;
+alter table public.profiles alter column account_id set not null;
+alter table public.profiles alter column account_id set default auth.uid();
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_account_id_fkey') then
+    alter table public.profiles add constraint profiles_account_id_fkey
+      foreign key (account_id) references auth.users (id) on delete cascade;
+  end if;
+end;
+$$;
+alter table public.profiles alter column id set default gen_random_uuid();
+alter table public.profiles add column if not exists is_kid boolean not null default false;
+create index if not exists profiles_account_idx on public.profiles (account_id);
+
+-- join_group now takes who is joining.
+drop function if exists public.join_group(text);
+
+-- ---------- Helpers ----------
+
+-- True once an administrator has approved the signed-in account
+-- (Table Editor → profiles → approved, or the SQL in SETUP.md).
+create or replace function public.is_approved() returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((select approved from profiles where id = auth.uid()), false);
+$$;
+
+-- True if the signed-in account manages this person: themselves or their kid.
+create or replace function public.controls(person uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from profiles where id = person and account_id = auth.uid());
+$$;
+
+create or replace function public.is_active_member(gid uuid, person uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from memberships where group_id = gid and user_id = person and left_at is null);
+$$;
+
+-- Every group rule goes through this: the account is approved and one of its
+-- people (the grown-up or a kid) is a current member of the group.
+create or replace function public.is_member(gid uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select public.is_approved() and exists (
+    select 1 from memberships m
+    join profiles p on p.id = m.user_id
+    where m.group_id = gid and p.account_id = auth.uid() and m.left_at is null
+  );
+$$;
+
+create or replace function public.shares_group(other uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select public.is_approved() and exists (
+    select 1 from memberships a
+    join profiles p on p.id = a.user_id
+    join memberships b on b.group_id = a.group_id
+    where p.account_id = auth.uid() and a.left_at is null and b.user_id = other
+  );
+$$;
+
+-- Invite codes look like REYES-7KQ3-XM9P: up to 5 letters from the group
+-- name, then 8 random characters (31^8, about 850 billion possibilities).
+-- The alphabet leaves out 0/O, 1/I/L so codes are easy to read aloud.
+create or replace function public.new_invite_code(p_name text) returns text
+language plpgsql volatile set search_path = public as $$
+declare
+  alphabet constant text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  -- Bytes of a random UUID, skipping the two that hold version/variant bits.
+  picks constant int[] := array[0, 1, 2, 3, 4, 5, 10, 11];
+  prefix text;
+  code text;
+  bytes bytea;
+begin
+  prefix := upper(left(regexp_replace(regexp_replace(coalesce(p_name, ''), '^\s*the\s+', '', 'i'), '[^A-Za-z]', '', 'g'), 5));
+  if prefix = '' then prefix := 'TOWN'; end if;
+  loop
+    bytes := uuid_send(gen_random_uuid());
+    code := prefix || '-';
+    for i in 1..8 loop
+      code := code || substr(alphabet, get_byte(bytes, picks[i]) % 31 + 1, 1);
+      if i = 4 then code := code || '-'; end if;
+    end loop;
+    exit when not exists (select 1 from groups where invite_code = code);
+  end loop;
+  return code;
+end;
+$$;
+
+-- Creates a group with a fresh invite code. Groups are started by grown-ups:
+-- the signed-in account's own profile creates it and joins it.
+create or replace function public.create_group(p_name text, p_town text, p_accent text)
+returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  gid uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Please sign in first.';
+  end if;
+  if not public.is_approved() then
+    raise exception 'Your account is waiting for approval.';
+  end if;
+  insert into groups (name, town_name, accent, invite_code, created_by)
+  values (trim(p_name), trim(p_town), coalesce(p_accent, '#FFD23F'), public.new_invite_code(p_name), auth.uid())
+  returning id into gid;
+  insert into memberships (group_id, user_id) values (gid, auth.uid());
+  return gid;
+end;
+$$;
+
+-- Joins the group with this invite code, as the grown-up or one of their
+-- kids (p_person). Case, spaces and dashes don't matter. Joining twice is
+-- harmless.
+create or replace function public.join_group(p_code text, p_person uuid default null)
+returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  gid uuid;
+  person uuid := coalesce(p_person, auth.uid());
+begin
+  if auth.uid() is null then
+    raise exception 'Please sign in first.';
+  end if;
+  if not public.is_approved() then
+    raise exception 'Your account is waiting for approval.';
+  end if;
+  if not public.controls(person) then
+    raise exception 'You can only join as yourself or one of your kids.';
+  end if;
+  select id into gid from groups
+  where regexp_replace(invite_code, '[^A-Z0-9]', '', 'g') = regexp_replace(upper(coalesce(p_code, '')), '[^A-Z0-9]', '', 'g');
+  if gid is null then
+    raise exception 'No group has that code. Check it and try again.';
+  end if;
+  insert into memberships (group_id, user_id) values (gid, person)
+  on conflict do nothing;
+  return gid;
+end;
+$$;
+
+-- Adds a kid to the signed-in account, and to any of the grown-up's groups
+-- listed in p_groups. Kids follow their parent's approval.
+create or replace function public.add_kid(p_name text, p_avatar text, p_groups uuid[] default '{}')
+returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  kid uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Please sign in first.';
+  end if;
+  if not public.is_approved() then
+    raise exception 'Your account is waiting for approval.';
+  end if;
+  if (select count(*) from profiles where account_id = auth.uid() and is_kid) >= 10 then
+    raise exception 'An account can manage up to 10 kids.';
+  end if;
+  insert into profiles (account_id, is_kid, display_name, avatar, approved)
+  values (auth.uid(), true, trim(p_name), coalesce(p_avatar, 'kid-1'), true)
+  returning id into kid;
+  insert into memberships (group_id, user_id)
+  select g, kid from unnest(coalesce(p_groups, '{}')) as g
+  where public.is_active_member(g, auth.uid());
+  return kid;
+end;
+$$;
+
+-- Removes one person without changing any town's past: hands each group they
+-- started to its longest-standing remaining member (or deletes the group if
+-- they were alone), erases the words of their notes and their name on notes
+-- to them, marks their memberships as left, and deletes their profile (name
+-- and avatar). Their notes and visits stay as anonymous tallies.
+create or replace function public.delete_person(person uuid)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  g record;
+  heir uuid;
+begin
+  for g in select id from groups where created_by = person loop
+    select m.user_id into heir from memberships m
+    left join profiles p on p.id = m.user_id
+    where m.group_id = g.id and m.user_id <> person and m.left_at is null
+    order by coalesce(p.is_kid, false), m.joined_at, m.user_id
+    limit 1;
+    if heir is null then
+      delete from groups where id = g.id;
+    else
+      update groups set created_by = heir where id = g.id;
+    end if;
+  end loop;
+
+  update thanks
+  set body = null,
+      recipient_name = case when recipient_id is null then 'Someone outside the group' else recipient_name end
+  where author_id = person;
+  update thanks set recipient_name = 'A former member' where recipient_id = person;
+  update memberships set left_at = now() where user_id = person and left_at is null;
+  delete from profiles where id = person;
+end;
+$$;
+
+-- A parent removes one of their kids.
+create or replace function public.remove_kid(p_kid uuid)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not exists (select 1 from profiles where id = p_kid and is_kid and account_id = auth.uid()) then
+    raise exception 'That isn''t one of your kids.';
+  end if;
+  perform public.delete_person(p_kid);
+end;
+$$;
+
+-- Deletes a whole account: each of its kids, then the grown-up, then the
+-- sign-in and email. Towns stay exactly as built.
+create or replace function public.delete_account(me uuid)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  kid record;
+begin
+  if me is null then
+    raise exception 'Please sign in first.';
+  end if;
+  for kid in select id from profiles where account_id = me and is_kid loop
+    perform public.delete_person(kid.id);
+  end loop;
+  perform public.delete_person(me);
+  delete from auth.users where id = me;
+end;
+$$;
+
+-- People delete only their own account, from the app.
+create or replace function public.delete_my_account()
+returns void
+language sql security definer set search_path = public as $$
+  select public.delete_account(auth.uid());
+$$;
+
+-- For the administrator, in the SQL Editor:
+--   select public.delete_account_by_email('their.email@example.com');
+create or replace function public.delete_account_by_email(p_email text)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  target uuid;
+begin
+  select id into target from auth.users where lower(email) = lower(trim(p_email));
+  if target is null then
+    raise exception 'No account uses that email.';
+  end if;
+  perform public.delete_account(target);
+end;
+$$;
+
+revoke execute on function public.new_invite_code(text) from public, anon, authenticated;
+revoke execute on function public.delete_person(uuid) from public, anon, authenticated;
+revoke execute on function public.delete_account(uuid) from public, anon, authenticated;
+revoke execute on function public.delete_account_by_email(text) from public, anon, authenticated;
+revoke execute on function public.create_group(text, text, text) from public, anon;
+revoke execute on function public.join_group(text, uuid) from public, anon;
+revoke execute on function public.add_kid(text, text, uuid[]) from public, anon;
+revoke execute on function public.remove_kid(uuid) from public, anon;
+revoke execute on function public.delete_my_account() from public, anon;
+grant execute on function public.create_group(text, text, text) to authenticated;
+grant execute on function public.join_group(text, uuid) to authenticated;
+grant execute on function public.add_kid(text, text, uuid[]) to authenticated;
+grant execute on function public.remove_kid(uuid) to authenticated;
+grant execute on function public.delete_my_account() to authenticated;
+
+-- ---------- Row level security ----------
+
+alter table public.profiles enable row level security;
+alter table public.groups enable row level security;
+alter table public.memberships enable row level security;
+alter table public.thanks enable row level security;
+alter table public.visits enable row level security;
+
+drop policy if exists "See yourself and people in your groups" on public.profiles;
+create policy "See yourself and people in your groups" on public.profiles
+  for select using (account_id = auth.uid() or public.shares_group(id));
+drop policy if exists "Create your own profile" on public.profiles;
+create policy "Create your own profile" on public.profiles
+  for insert with check (id = auth.uid() and account_id = auth.uid() and not is_kid);
+drop policy if exists "Edit your own profile" on public.profiles;
+drop policy if exists "Edit your own and your kids' profiles" on public.profiles;
+create policy "Edit your own and your kids' profiles" on public.profiles
+  for update using (account_id = auth.uid()) with check (account_id = auth.uid());
+
+-- People set only names and avatars. Only an administrator (in the Supabase
+-- dashboard) changes approved, and kids are added through add_kid(). id is in
+-- the update grant because saving a profile is an upsert; the policy keeps
+-- every row tied to your account.
+revoke insert, update on public.profiles from authenticated;
+grant insert (id, display_name, avatar) on public.profiles to authenticated;
+grant update (id, display_name, avatar) on public.profiles to authenticated;
+
+drop policy if exists "See your groups" on public.groups;
+create policy "See your groups" on public.groups
+  for select using (public.is_member(id));
+drop policy if exists "Members can rename the town" on public.groups;
+create policy "Members can rename the town" on public.groups
+  for update using (public.is_member(id)) with check (public.is_member(id));
+-- Members may change only these columns (not the invite code or creator).
+revoke update on public.groups from authenticated;
+grant update (name, town_name, accent) on public.groups to authenticated;
+
+drop policy if exists "See who is in your groups" on public.memberships;
+create policy "See who is in your groups" on public.memberships
+  for select using (public.is_member(group_id));
+
+drop policy if exists "Read your groups' notes" on public.thanks;
+drop policy if exists "Read your groups' thank-yous" on public.thanks;
+create policy "Read your groups' notes" on public.thanks
+  for select using (public.is_member(group_id));
+drop policy if exists "Share your own note" on public.thanks;
+drop policy if exists "Share your own thank-you" on public.thanks;
+create policy "Share your own note" on public.thanks
+  for insert with check (
+    public.controls(author_id)
+    and public.is_member(group_id)
+    and public.is_active_member(group_id, author_id)
+    and (recipient_id is null or public.is_active_member(group_id, recipient_id))
+  );
+
+drop policy if exists "See your groups' visits" on public.visits;
+create policy "See your groups' visits" on public.visits
+  for select using (public.is_member(group_id));
+drop policy if exists "Record your own visit" on public.visits;
+create policy "Record your own visit" on public.visits
+  for insert with check (
+    public.controls(user_id)
+    and public.is_member(group_id)
+    and public.is_active_member(group_id, user_id)
+  );

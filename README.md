@@ -19,6 +19,7 @@ then visit http://localhost:5173.
 | File | Screen |
 | --- | --- |
 | `signin.html` | Email sign-in, your name and your avatar |
+| `who.html` | Who's using the app? Switch person, add and manage kids |
 | `index.html` | Group home (or a welcome when you have no group yet) |
 | `share.html` | Share a note of appreciation |
 | `town.html` | Your town |
@@ -35,7 +36,7 @@ then visit http://localhost:5173.
 - `js/town.js` — the town's growth rules and the drawing of the town scene.
 - `js/avatars.js` — the 20 avatars, drawn as round portraits and as figures in town.
 - `js/surprises.js` — the surprise a 3-day visit streak brings, and how each one is drawn.
-- `js/ui.js` — what every screen does on load: sign-in check, current group, today's visit.
+- `js/ui.js` — what every screen does on load: sign-in check, who's using the app, current group, today's visit.
 - `js/app.js` — the bottom tab bar and offline support; `sw.js` is the service worker.
 - `supabase/schema.sql` — tables and privacy rules.
 - `supabase/migrations/` — one-time updates for a database set up from an earlier schema.

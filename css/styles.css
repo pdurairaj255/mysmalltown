@@ -460,6 +460,26 @@ button { font-family: inherit; color: inherit; }
 .avatar-choice input:checked + .pic { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--ink); }
 .avatar-choice input:focus-visible + .pic { outline: 3px solid var(--ink); outline-offset: 6px; }
 
+/* "Using as Maya · Switch" chip on Home */
+.who-chip {
+  align-self: flex-start;
+  margin: 0 20px 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 14px 4px 4px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.who-chip .avatar { width: 34px; height: 34px; }
+.who-chip strong { font-weight: 800; }
+
 /* Bottom sheet dialog */
 .sheet {
   border: 0;

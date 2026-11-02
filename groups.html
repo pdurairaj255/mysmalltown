@@ -49,6 +49,7 @@
       <li>The words of every note of appreciation you wrote are erased.</li>
       <li>Your towns stay exactly as built. Your past notes and visits still count, without your name.</li>
       <li>Any group you started passes to its longest-standing member, or is deleted if you're the only one in it.</li>
+      <li>Kid profiles on your account are removed the same way.</li>
     </ul>
     <p class="item-title" style="margin: 0">This can't be undone.</p>
     <div class="field">
@@ -79,7 +80,7 @@
     </svg>`;
 
   try {
-    const { group, groups, profile, user } = await boot({ needGroup: false });
+    const { group, groups, profile, user, person, hasKids } = await boot({ needGroup: false });
     const today = dayKey();
     const joinCode = new URLSearchParams(location.search).get('join') || '';
     const inviteUrl = group ? new URL(`groups.html?join=${encodeURIComponent(group.invite_code)}`, location.href).href : '';
@@ -108,7 +109,7 @@
       </section>` : ''}
 
       <form class="field" id="join" style="gap: 10px" novalidate>
-        <label class="form-title" for="join-code">Join with a code</label>
+        <label class="form-title" for="join-code">Join with a code${person.is_kid ? ` as ${esc(person.display_name)}` : ''}</label>
         <div class="join-row">
           <input class="input" id="join-code" type="text" placeholder="TOWN-XXXX-XXXX" autocomplete="off" value="${esc(joinCode)}">
           <button type="submit" class="small-btn">Join</button>
@@ -119,6 +120,17 @@
       <a class="btn btn--dashed" href="new-group.html">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         Start a new group
+      </a>
+
+      <a class="card" href="who.html" aria-label="Who's using the app" style="text-decoration: none; color: inherit">
+        <div class="row">
+          ${avatar(person)}
+          <div class="stack stack-1 grow">
+            <span class="item-title">${hasKids ? `Using as ${esc(person.display_name)}` : 'Kid profiles'}</span>
+            <span class="note">${hasKids ? 'Switch person, or add and manage kids' : 'Add kids who share your sign-in but have their own name and avatar'}</span>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
       </a>
 
       <section class="card" aria-label="Your profile">
@@ -158,7 +170,7 @@
       const code = document.getElementById('join-code').value.trim();
       if (!code) { err.textContent = 'Enter the code someone sent you.'; err.hidden = false; return; }
       try {
-        const id = await api.joinGroup(code);
+        const id = await api.joinGroup(code, person.id);
         rememberGroup(id);
         location.href = 'index.html';
       } catch (ex) {

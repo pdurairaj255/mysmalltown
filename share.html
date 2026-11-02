@@ -129,6 +129,7 @@
         try {
           await api.shareThanks({
             group_id: group.id,
+            author_id: me.user_id,
             recipient_id: picked.dataset.id || null,
             recipient_name: picked.dataset.id ? picked.dataset.name : outside,
             body,

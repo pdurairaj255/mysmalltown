@@ -88,8 +88,7 @@
 </div>
 <script src="js/app.js"></script>
 <script type="module">
-  import { api, isDemo, AVATARS, AGE_GROUPS, portrait, safeNext } from './js/ui.js';
-  import { esc } from './js/util.js';
+  import { api, isDemo, avatarPicker, portrait, safeNext } from './js/ui.js';
 
   const params = new URLSearchParams(location.search);
   const next = safeNext(params.get('next'));
@@ -115,18 +114,7 @@
     try { await fn(); } catch (e) { setError(form, e.message); } finally { btn.disabled = false; }
   }
 
-  document.getElementById('avatars').innerHTML = AGE_GROUPS.map((age) => `
-    <fieldset class="avatar-group">
-      <legend>${age}</legend>
-      <div class="avatar-grid">
-        ${AVATARS.filter((v) => v.age === age).map((v) => `
-          <label class="avatar-choice" title="${esc(v.label)}">
-            <input type="radio" name="avatar" value="${v.id}">
-            <span class="pic">${portrait(v.id)}</span>
-            <span class="sr-only">${esc(v.label)}</span>
-          </label>`).join('')}
-      </div>
-    </fieldset>`).join('');
+  document.getElementById('avatars').innerHTML = avatarPicker('avatar');
 
   // New accounts wait here until an administrator approves them.
   function showWaiting(user, profile) {

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Who's using the app · My Small Town</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F3F0FF">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Small Town">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  .people-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .pick {
+    border: 1px solid var(--line); border-radius: 20px; background: var(--surface); padding: 16px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; font-family: var(--font-body);
+  }
+  .pick[aria-current="true"] { border: 2.5px solid var(--ink); }
+  .pick .avatar { width: 72px; height: 72px; }
+  .pick .name { font-size: 16px; font-weight: 700; text-align: center; overflow-wrap: anywhere; }
+  .pick .role { font-size: 12px; color: var(--muted); }
+  .kid-row .actions { display: flex; gap: 6px; }
+  .group-checks { display: flex; flex-direction: column; gap: 10px; border: 0; margin: 0; padding: 0; }
+  .sheet form { max-height: 88vh; overflow-y: auto; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <span class="brand">My Small Town</span>
+    <h1 class="page-title">Who's using the app?</h1>
+  </header>
+
+  <main class="app-main app-main--loose" id="main" style="padding-top: 8px"><p class="note">Loading…</p></main>
+</div>
+
+<dialog class="sheet" id="kid-sheet" aria-labelledby="kid-title">
+  <form novalidate>
+    <h2 class="form-title" id="kid-title">Add a kid</h2>
+    <p class="note" style="margin: 0">Kids get their own name, avatar and daily note of appreciation. They use your sign-in, so they don't need an email.</p>
+    <div class="field">
+      <label for="kid-name" style="font-size: 15px; font-weight: 700">Name</label>
+      <input class="input input--sm" id="kid-name" type="text" maxlength="40" autocomplete="off" required placeholder="What the family calls them">
+    </div>
+    <fieldset class="field" style="border: 0; margin: 0; padding: 0; gap: 14px">
+      <legend style="font-size: 15px; font-weight: 700; padding: 0; margin-bottom: 4px">Their townsperson</legend>
+      <div class="stack stack-14" id="kid-avatars"></div>
+    </fieldset>
+    <fieldset class="group-checks" id="kid-groups-wrap">
+      <legend style="font-size: 15px; font-weight: 700; padding: 0; margin-bottom: 8px">Add them to</legend>
+      <div class="stack stack-10" id="kid-groups"></div>
+    </fieldset>
+    <p class="form-error" role="alert" hidden></p>
+    <div class="row" style="gap: 10px">
+      <button type="button" class="btn btn--md btn--outline" data-close>Cancel</button>
+      <button type="submit" class="btn btn--md" id="kid-save">Add kid</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="remove-sheet" aria-labelledby="remove-title">
+  <form novalidate>
+    <h2 class="form-title" id="remove-title">Remove this kid?</h2>
+    <ul class="stack stack-8" style="font-size: 14px; line-height: 1.45; color: var(--ink-2); padding-left: 18px; list-style: disc">
+      <li>Their name and avatar are deleted, and the words of every note they wrote are erased.</li>
+      <li>Your towns stay exactly as built. Their past notes and visits still count, without their name.</li>
+    </ul>
+    <p class="item-title" style="margin: 0">This can't be undone.</p>
+    <p class="form-error" role="alert" hidden></p>
+    <div class="row" style="gap: 10px">
+      <button type="button" class="btn btn--md btn--outline" data-close>Keep them</button>
+      <button type="submit" class="btn btn--md btn--danger">Remove</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="js/app.js"></script>
+<script type="module">
+  import { boot, api, avatar, avatarPicker, setActivePerson, safeNext, showError, toast } from './js/ui.js';
+  import { esc } from './js/util.js';
+
+  const main = document.getElementById('main');
+  const next = safeNext(new URLSearchParams(location.search).get('next'));
+
+  try {
+    const { user, people, person } = await boot({ needGroup: false, choosing: true });
+    const kids = people.filter((p) => p.is_kid);
+    const myGroups = await api.listMyGroups(user.id);
+
+    main.innerHTML = `
+      <p class="body-text" style="color: var(--ink-2)">Tap your townsperson. Everything you share and every visit counts for whoever is picked here.</p>
+      <div class="people-pick">
+        ${people.map((p) => `
+          <button type="button" class="pick" data-id="${esc(p.id)}"${p.id === person.id ? ' aria-current="true"' : ''}>
+            ${avatar(p)}
+            <span class="name">${esc(p.display_name)}</span>
+            <span class="role">${p.is_kid ? 'Kid' : 'Grown-up'}</span>
+          </button>`).join('')}
+      </div>
+
+      <section class="card" aria-label="Kids on this account">
+        <div class="stack stack-4">
+          <h2 class="section-title">Kids on this account</h2>
+          <p class="note">Kids share your sign-in but have their own name, avatar, notes and place in town.</p>
+        </div>
+        ${kids.length ? `<ul class="stack">${kids.map((k) => `
+          <li class="list-row list-row--center kid-row">${avatar(k)}
+            <span class="item-title grow">${esc(k.display_name)}</span>
+            <span class="actions">
+              <button type="button" class="pill-btn" data-edit="${esc(k.id)}">Edit</button>
+              <button type="button" class="pill-btn" data-remove="${esc(k.id)}" style="color: #B3261E">Remove</button>
+            </span>
+          </li>`).join('')}</ul>` : ''}
+        <button type="button" class="btn btn--dashed" id="add-kid">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Add a kid
+        </button>
+        <a class="link-btn" href="signin.html?step=profile&amp;next=who.html" style="align-self: flex-start">Edit your own name or avatar</a>
+      </section>`;
+
+    main.querySelectorAll('.pick').forEach((btn) => btn.addEventListener('click', () => {
+      setActivePerson(btn.dataset.id);
+      location.replace(next);
+    }));
+
+    // Add / edit a kid
+    const kidSheet = document.getElementById('kid-sheet');
+    const kidForm = kidSheet.querySelector('form');
+    const kidError = kidForm.querySelector('.form-error');
+    document.getElementById('kid-avatars').innerHTML = avatarPicker('kid-avatar');
+    let editing = null;
+
+    function openKidSheet(kid) {
+      editing = kid;
+      kidForm.reset();
+      kidError.hidden = true;
+      document.getElementById('kid-title').textContent = kid ? `Edit ${kid.display_name}` : 'Add a kid';
+      document.getElementById('kid-save').textContent = kid ? 'Save' : 'Add kid';
+      document.getElementById('kid-name').value = kid ? kid.display_name : '';
+      if (kid) {
+        const radio = kidForm.querySelector(`input[name=kid-avatar][value="${CSS.escape(kid.avatar || '')}"]`);
+        if (radio) radio.checked = true;
+      }
+      const wrap = document.getElementById('kid-groups-wrap');
+      wrap.hidden = !!kid || !myGroups.length;
+      document.getElementById('kid-groups').innerHTML = myGroups.map((g, i) => `
+        <div class="checkbox-row"><input type="checkbox" id="g-${i}" value="${esc(g.id)}" checked><label for="g-${i}">${esc(g.name)}</label></div>`).join('');
+      kidSheet.showModal();
+    }
+    document.getElementById('add-kid').addEventListener('click', () => openKidSheet(null));
+    main.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => openKidSheet(kids.find((k) => k.id === b.dataset.edit))));
+
+    kidForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const display_name = document.getElementById('kid-name').value.trim();
+      const avatarId = kidForm.querySelector('input[name=kid-avatar]:checked')?.value;
+      const fail = (msg) => { kidError.textContent = msg; kidError.hidden = false; };
+      if (!display_name) return fail('Give them a name.');
+      if (!avatarId) return fail('Pick their townsperson.');
+      const btn = document.getElementById('kid-save');
+      btn.disabled = true;
+      try {
+        if (editing) {
+          await api.updatePerson(editing.id, { display_name, avatar: avatarId });
+          toast('Saved');
+        } else {
+          const groupIds = [...kidForm.querySelectorAll('#kid-groups input:checked')].map((c) => c.value);
+          await api.addKid({ display_name, avatar: avatarId, groupIds });
+          toast(`${display_name} moved into town`);
+        }
+        setTimeout(() => location.reload(), 500);
+      } catch (ex) {
+        fail(ex.message);
+        btn.disabled = false;
+      }
+    });
+
+    // Remove a kid
+    const removeSheet = document.getElementById('remove-sheet');
+    let removing = null;
+    main.querySelectorAll('[data-remove]').forEach((b) => b.addEventListener('click', () => {
+      removing = kids.find((k) => k.id === b.dataset.remove);
+      document.getElementById('remove-title').textContent = `Remove ${removing.display_name}?`;
+      removeSheet.querySelector('.form-error').hidden = true;
+      removeSheet.showModal();
+    }));
+    removeSheet.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await api.removeKid(removing.id);
+        if (removing.id === person.id) setActivePerson(user.id);
+        location.reload();
+      } catch (ex) {
+        const err = removeSheet.querySelector('.form-error');
+        err.textContent = ex.message;
+        err.hidden = false;
+      }
+    });
+
+    document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+  } catch (e) {
+    showError(main, e.message);
+  }
+</script>
+</body>
+</html>

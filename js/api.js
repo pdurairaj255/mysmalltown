@@ -2,12 +2,17 @@
 // Talks to Supabase when js/config.js is filled in; otherwise runs a demo
 // backend that keeps everything in this browser's localStorage.
 // Both backends expose the same functions, so pages never care which is live.
+//
+// People vs. accounts: an account is a sign-in (one email). A person is a
+// profile. Grown-ups' profile id equals their account id; kids are extra
+// profiles managed by a parent's account. Anything a person does (join,
+// share, visit) names the person explicitly.
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 export const isDemo = !SUPABASE_URL || !SUPABASE_ANON_KEY;
 
-// Current members get their name and avatar. People who deleted their account
+// Current members get their name and avatar. People who have been deleted
 // become anonymous former members, kept only so past weeks add up the same.
 function splitMembers(rows, profileOf) {
   const members = [];
@@ -17,11 +22,13 @@ function splitMembers(rows, profileOf) {
       formerMembers.push({ user_id: r.user_id, joined_at: r.joined_at, left_at: r.left_at, name: 'A former member' });
     } else {
       const p = profileOf(r.user_id);
-      members.push({ user_id: r.user_id, joined_at: r.joined_at, name: p?.display_name ?? 'Someone', avatar: p?.avatar });
+      members.push({ user_id: r.user_id, joined_at: r.joined_at, name: p?.display_name ?? 'Someone', avatar: p?.avatar, is_kid: !!p?.is_kid });
     }
   }
   return { members, formerMembers };
 }
+
+const ALREADY_SHARED = "You've already shared today's note of appreciation in this group.";
 
 // ---------- Supabase ----------
 
@@ -51,6 +58,7 @@ function supabaseBackend(sb) {
       await sb.auth.signOut();
     },
 
+    // The signed-in grown-up's own profile.
     async getProfile(userId) {
       const { data, error } = await sb.from('profiles').select('id, display_name, avatar, approved').eq('id', userId).maybeSingle();
       if (error) fail(error);
@@ -62,10 +70,38 @@ function supabaseBackend(sb) {
       if (error) fail(error);
     },
 
-    async listMyGroups(userId) {
+    // Everyone this account manages: the grown-up first, then their kids.
+    async listPeople(accountId) {
+      const { data, error } = await sb.from('profiles')
+        .select('id, display_name, avatar, is_kid, created_at')
+        .eq('account_id', accountId)
+        .order('is_kid')
+        .order('created_at');
+      if (error) fail(error);
+      return data;
+    },
+
+    async addKid({ display_name, avatar, groupIds }) {
+      const { data, error } = await sb.rpc('add_kid', { p_name: display_name, p_avatar: avatar, p_groups: groupIds });
+      if (error) fail(error);
+      return data;
+    },
+
+    async updatePerson(personId, { display_name, avatar }) {
+      const { error } = await sb.from('profiles').update({ display_name, avatar }).eq('id', personId);
+      if (error) fail(error);
+    },
+
+    // See delete_person() in supabase/schema.sql for exactly what this keeps and erases.
+    async removeKid(personId) {
+      const { error } = await sb.rpc('remove_kid', { p_kid: personId });
+      if (error) fail(error);
+    },
+
+    async listMyGroups(personId) {
       const { data, error } = await sb.from('memberships')
         .select('joined_at, groups (id, name, town_name, accent, invite_code, created_by, created_at)')
-        .eq('user_id', userId)
+        .eq('user_id', personId)
         .is('left_at', null);
       if (error) fail(error);
       return data.filter((m) => m.groups).map((m) => ({ ...m.groups, joined_at: m.joined_at }))
@@ -78,8 +114,8 @@ function supabaseBackend(sb) {
       return data;
     },
 
-    async joinGroup(code) {
-      const { data, error } = await sb.rpc('join_group', { p_code: code });
+    async joinGroup(code, personId) {
+      const { data, error } = await sb.rpc('join_group', { p_code: code, p_person: personId });
       if (error) fail(error);
       return data;
     },
@@ -98,27 +134,28 @@ function supabaseBackend(sb) {
       ]);
       for (const r of [g, m, t, v]) if (r.error) fail(r.error);
       const ids = m.data.filter((r) => !r.left_at).map((r) => r.user_id);
-      const p = await sb.from('profiles').select('id, display_name, avatar').in('id', ids);
+      const p = await sb.from('profiles').select('id, display_name, avatar, is_kid').in('id', ids);
       if (p.error) fail(p.error);
       const byId = new Map(p.data.map((row) => [row.id, row]));
       return { group: g.data, ...splitMembers(m.data, (id) => byId.get(id)), thanks: t.data, visits: v.data };
     },
 
+    // row.author_id is the person sharing (the grown-up or one of their kids).
     async shareThanks(row) {
-      const { error } = await sb.from('thanks').insert({ ...row, author_id: cachedUser.id });
+      const { error } = await sb.from('thanks').insert(row);
       if (error) {
-        if (error.code === '23505') throw new Error("You've already shared today's note of appreciation in this group.");
+        if (error.code === '23505') throw new Error(ALREADY_SHARED);
         fail(error);
       }
     },
 
-    async recordVisit(groupId, day) {
+    async recordVisit(groupId, day, personId) {
       const { error } = await sb.from('visits')
-        .upsert({ group_id: groupId, user_id: cachedUser.id, day }, { onConflict: 'group_id,user_id,day', ignoreDuplicates: true });
+        .upsert({ group_id: groupId, user_id: personId, day }, { onConflict: 'group_id,user_id,day', ignoreDuplicates: true });
       if (error) fail(error);
     },
 
-    // See delete_my_account() in supabase/schema.sql for exactly what this keeps and erases.
+    // See delete_account() in supabase/schema.sql for exactly what this keeps and erases.
     async deleteMyAccount() {
       const { error } = await sb.rpc('delete_my_account');
       if (error) fail(error);
@@ -150,6 +187,36 @@ function demoBackend() {
     if (!db.session) throw new Error('Please sign in first.');
     return db.session;
   };
+  // Profiles saved before kid profiles existed belong to themselves.
+  const accountOf = (db, personId) => db.profiles[personId]?.account_id ?? personId;
+  const controls = (db, personId) => !!db.profiles[personId] && accountOf(db, personId) === me(db);
+  const activeMember = (db, gid, personId) => db.memberships.some((m) => m.group_id === gid && m.user_id === personId && !m.left_at);
+
+  // Mirrors delete_person() in supabase/schema.sql.
+  function deletePerson(db, person) {
+    for (const g of db.groups.filter((x) => x.created_by === person)) {
+      const heir = db.memberships
+        .filter((m) => m.group_id === g.id && m.user_id !== person && !m.left_at)
+        .sort((a, b) => Number(!!db.profiles[a.user_id]?.is_kid) - Number(!!db.profiles[b.user_id]?.is_kid)
+          || a.joined_at.localeCompare(b.joined_at) || a.user_id.localeCompare(b.user_id))[0];
+      if (heir) {
+        g.created_by = heir.user_id;
+      } else {
+        db.groups = db.groups.filter((x) => x.id !== g.id);
+        for (const k of ['memberships', 'thanks', 'visits']) db[k] = db[k].filter((r) => r.group_id !== g.id);
+      }
+    }
+    for (const t of db.thanks) {
+      if (t.author_id === person) {
+        t.body = null;
+        if (!t.recipient_id) t.recipient_name = 'Someone outside the group';
+      }
+      if (t.recipient_id === person) t.recipient_name = 'A former member';
+    }
+    const now = new Date().toISOString();
+    for (const m of db.memberships) if (m.user_id === person && !m.left_at) m.left_at = now;
+    delete db.profiles[person];
+  }
 
   return {
     async getUser() {
@@ -181,13 +248,49 @@ function demoBackend() {
 
     async saveProfile(userId, { display_name, avatar }) {
       const db = load();
-      db.profiles[userId] = { display_name, avatar };
+      db.profiles[userId] = { ...db.profiles[userId], display_name, avatar, account_id: userId, is_kid: false, created_at: db.profiles[userId]?.created_at ?? new Date().toISOString() };
       save(db);
     },
 
-    async listMyGroups(userId) {
+    async listPeople(accountId) {
       const db = load();
-      return db.memberships.filter((m) => m.user_id === userId && !m.left_at)
+      return Object.entries(db.profiles)
+        .filter(([id]) => accountOf(db, id) === accountId)
+        .map(([id, p]) => ({ id, display_name: p.display_name, avatar: p.avatar, is_kid: !!p.is_kid, created_at: p.created_at ?? '' }))
+        .sort((a, b) => Number(a.is_kid) - Number(b.is_kid) || a.created_at.localeCompare(b.created_at));
+    },
+
+    async addKid({ display_name, avatar, groupIds = [] }) {
+      const db = load();
+      const uid = me(db);
+      if (Object.values(db.profiles).filter((p) => p.is_kid && p.account_id === uid).length >= 10) {
+        throw new Error('An account can manage up to 10 kids.');
+      }
+      const id = uuid();
+      const now = new Date().toISOString();
+      db.profiles[id] = { display_name: display_name.trim(), avatar, account_id: uid, is_kid: true, approved: true, created_at: now };
+      for (const gid of groupIds) if (activeMember(db, gid, uid)) db.memberships.push({ group_id: gid, user_id: id, joined_at: now });
+      save(db);
+      return id;
+    },
+
+    async updatePerson(personId, { display_name, avatar }) {
+      const db = load();
+      if (!controls(db, personId)) throw new Error("You can only change yourself or one of your kids.");
+      Object.assign(db.profiles[personId], { display_name, avatar });
+      save(db);
+    },
+
+    async removeKid(personId) {
+      const db = load();
+      if (!controls(db, personId) || !db.profiles[personId].is_kid) throw new Error("That isn't one of your kids.");
+      deletePerson(db, personId);
+      save(db);
+    },
+
+    async listMyGroups(personId) {
+      const db = load();
+      return db.memberships.filter((m) => m.user_id === personId && !m.left_at)
         .map((m) => ({ ...db.groups.find((g) => g.id === m.group_id), joined_at: m.joined_at }))
         .sort((a, b) => a.created_at.localeCompare(b.created_at));
     },
@@ -205,13 +308,14 @@ function demoBackend() {
       return group.id;
     },
 
-    async joinGroup(code) {
+    async joinGroup(code, personId) {
       const db = load();
-      const uid = me(db);
+      const person = personId || me(db);
+      if (!controls(db, person)) throw new Error('You can only join as yourself or one of your kids.');
       const group = db.groups.find((g) => squash(g.invite_code) === squash(code));
       if (!group) throw new Error('No group has that code. Check it and try again.');
-      if (!db.memberships.some((m) => m.group_id === group.id && m.user_id === uid)) {
-        db.memberships.push({ group_id: group.id, user_id: uid, joined_at: new Date().toISOString() });
+      if (!db.memberships.some((m) => m.group_id === group.id && m.user_id === person)) {
+        db.memberships.push({ group_id: group.id, user_id: person, joined_at: new Date().toISOString() });
         save(db);
       }
       return group.id;
@@ -235,48 +339,31 @@ function demoBackend() {
 
     async shareThanks(row) {
       const db = load();
-      const uid = me(db);
-      if (db.thanks.some((t) => t.group_id === row.group_id && t.author_id === uid && t.day === row.day)) {
-        throw new Error("You've already shared today's note of appreciation in this group.");
+      if (!controls(db, row.author_id) || !activeMember(db, row.group_id, row.author_id)) {
+        throw new Error('You can only share as yourself or one of your kids.');
       }
-      db.thanks.push({ id: uuid(), ...row, author_id: uid, created_at: new Date().toISOString() });
+      if (db.thanks.some((t) => t.group_id === row.group_id && t.author_id === row.author_id && t.day === row.day)) {
+        throw new Error(ALREADY_SHARED);
+      }
+      db.thanks.push({ id: uuid(), ...row, created_at: new Date().toISOString() });
       save(db);
     },
 
-    async recordVisit(groupId, day) {
+    async recordVisit(groupId, day, personId) {
       const db = load();
-      const uid = me(db);
-      if (!db.visits.some((v) => v.group_id === groupId && v.user_id === uid && v.day === day)) {
-        db.visits.push({ group_id: groupId, user_id: uid, day });
+      if (!controls(db, personId) || !activeMember(db, groupId, personId)) return;
+      if (!db.visits.some((v) => v.group_id === groupId && v.user_id === personId && v.day === day)) {
+        db.visits.push({ group_id: groupId, user_id: personId, day });
         save(db);
       }
     },
 
-    // Mirrors delete_my_account() in supabase/schema.sql.
+    // Mirrors delete_account() in supabase/schema.sql.
     async deleteMyAccount() {
       const db = load();
       const uid = me(db);
-      for (const g of db.groups.filter((x) => x.created_by === uid)) {
-        const heir = db.memberships
-          .filter((m) => m.group_id === g.id && m.user_id !== uid && !m.left_at)
-          .sort((a, b) => a.joined_at.localeCompare(b.joined_at) || a.user_id.localeCompare(b.user_id))[0];
-        if (heir) {
-          g.created_by = heir.user_id;
-        } else {
-          db.groups = db.groups.filter((x) => x.id !== g.id);
-          for (const k of ['memberships', 'thanks', 'visits']) db[k] = db[k].filter((r) => r.group_id !== g.id);
-        }
-      }
-      for (const t of db.thanks) {
-        if (t.author_id === uid) {
-          t.body = null;
-          if (!t.recipient_id) t.recipient_name = 'Someone outside the group';
-        }
-        if (t.recipient_id === uid) t.recipient_name = 'A former member';
-      }
-      const now = new Date().toISOString();
-      for (const m of db.memberships) if (m.user_id === uid && !m.left_at) m.left_at = now;
-      delete db.profiles[uid];
+      for (const [id, p] of Object.entries(db.profiles)) if (p.is_kid && p.account_id === uid) deletePerson(db, id);
+      deletePerson(db, uid);
       for (const [email, id] of Object.entries(db.users)) if (id === uid) delete db.users[email];
       db.session = null;
       save(db);

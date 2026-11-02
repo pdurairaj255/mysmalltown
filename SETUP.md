@@ -20,6 +20,7 @@ This creates the tables and the privacy rules: people can only see groups they b
 >
 > 1. [`supabase/migrations/002_approval_and_invite_codes.sql`](supabase/migrations/002_approval_and_invite_codes.sql): avatars, account approval and longer invite codes.
 > 2. [`supabase/migrations/003_delete_my_account.sql`](supabase/migrations/003_delete_my_account.sql): lets people delete their own account without shrinking anyone's town.
+> 3. [`supabase/migrations/004_kid_profiles.sql`](supabase/migrations/004_kid_profiles.sql): kid profiles under a parent's account.
 
 ## 3. Set up sign-in emails
 
@@ -102,6 +103,15 @@ The address is public, but that's all a stranger gets: the sign-in page. Nobody 
 3. Tap **Start a group**, name it, and choose a town name and color.
 4. On the **Groups** tab, tap **Share link** (or **Copy link**) and send it to your family. They sign in with their own email, pick their avatar, and wait for you to approve them. Once approved, the link fills in the invite code for them.
 5. To install it on a phone: on iPhone, open the link in Safari and tap **Share → Add to Home Screen**. On Android, open it in Chrome and tap **⋮ → Install app**.
+
+## Kid profiles
+
+Kids don't need an email. A parent adds them from **Groups → Kid profiles** (or **Who's using the app?**): name, avatar, and which of the parent's groups to join. Each kid has their own daily note of appreciation, visits, surprises and place in town.
+
+- **Sharing a device:** when an account has kids, the app asks **"Who's using the app?"** each time it's opened. Everyone taps their own townsperson, with no sign-in codes. The **Using as … · Switch** chip on Home switches at any time.
+- **Approval:** kids follow their parent's approval, so you approve the parent once.
+- **Removing a kid:** the parent taps **Remove** next to them. Like deleting an account, the town stays exactly as built, and only the kid's name, avatar and note text are erased. Deleting a parent's account removes their kids the same way.
+- An account can have up to 10 kids.
 
 ## Approving people
 
