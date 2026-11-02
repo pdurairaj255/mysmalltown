@@ -80,6 +80,21 @@ Right now the app doesn't know your Supabase project exists, so it runs in demo 
 
 Open the app. If the dark **"Demo mode"** strip at the top is gone and the sign-in page says **"Email me a sign-in code"**, the app is connected.
 
+## 4d. Put the app online (Netlify, free)
+
+This gives the app a web address your family can open on any phone or computer. It works with a private GitHub repo, and every time a change is pushed to GitHub, the site updates by itself within a minute or two.
+
+1. Go to [netlify.com](https://www.netlify.com), click **Sign up**, and choose **Sign up with GitHub**.
+2. Click **Add new site → Import an existing project → GitHub**. Netlify asks for access to your repositories: choose **Only select repositories**, pick `mysmalltown`, and approve.
+3. On the settings screen, leave **Build command** empty and set **Publish directory** to `.` (the [`netlify.toml`](netlify.toml) file fills these in). Click **Deploy**.
+4. Netlify gives the site a random address like `jolly-otter-123.netlify.app`. To choose a nicer one, go to **Site configuration → Change site name**, for example `mysmalltown-reyes`. The address becomes `https://mysmalltown-reyes.netlify.app`.
+5. Tell Supabase about the address: **Authentication → URL Configuration**.
+   - **Site URL:** your Netlify address, for example `https://mysmalltown-reyes.netlify.app`
+   - **Redirect URLs:** add the same address followed by `/**`, for example `https://mysmalltown-reyes.netlify.app/**`
+6. Open the address on your phone and sign in to check it works.
+
+The address is public, but that's all a stranger gets: the sign-in page. Nobody sees anything until you approve them, and search engines are told not to list the site.
+
 ## 5. Approve yourself, then invite your family
 
 1. Open the app, sign in with your email, and pick your name and townsperson (20 avatars: kids, teens, adults and grandparents). You'll land on an **"Almost there"** screen, because every new account, yours included, needs approval.
