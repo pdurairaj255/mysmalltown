@@ -111,7 +111,7 @@
         <section class="stack stack-12" aria-label="This week's notes of appreciation">
           <h2 class="section-title">This week's notes of appreciation</h2>
           ${feed.length ? feed.map((t) => {
-            const author = nameOf(t.author_id) || { name: 'Someone' };
+            const author = nameOf(t.author_id) || { name: 'A former member' };
             return `
             <article class="thanks" style="background: ${tintOf(author.avatar)}">
               <div class="row" style="gap: 10px">
@@ -121,7 +121,7 @@
                   ${t.recipient_id ? '' : '<span class="badge">Outside the group</span>'}
                 </div>
               </div>
-              <p class="body-text">${esc(t.body)}</p>
+              ${t.body ? `<p class="body-text">${esc(t.body)}</p>` : '<p class="note">The words of this note were removed when its author left. It still counts toward the town.</p>'}
             </article>`;
           }).join('') : `
             <div class="empty">

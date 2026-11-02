@@ -213,7 +213,11 @@ export function statusText(status, buildingName) {
 
 export const goalFor = (memberCount) => Math.max(1, Math.ceil((memberCount * 2) / 3));
 
-export function computeTown({ group, members, thanks, visits, today = dayKey() }) {
+// formerMembers are people who deleted their account. They still count in the
+// weeks they were part of (goals, notes, visits, surprises), so the town never
+// shrinks when someone leaves, but they no longer appear in town.
+export function computeTown({ group, members, formerMembers = [], thanks, visits, today = dayKey() }) {
+  const everyone = [...members, ...formerMembers];
   const start = mondayOf(dayKey(group.created_at));
   const weekOf = (day) => Math.floor(daysBetween(start, day) / 7);
   const currentIndex = Math.max(0, weekOf(today));
@@ -241,7 +245,7 @@ export function computeTown({ group, members, thanks, visits, today = dayKey() }
   let pieces = 0, extras = 0;
   const surprises = [];
   for (const w of weeks) {
-    w.members = members.filter((m) => dayKey(m.joined_at) <= w.end);
+    w.members = everyone.filter((m) => dayKey(m.joined_at) <= w.end && (!m.left_at || dayKey(m.left_at) >= w.start));
     w.sharers = new Set(w.thanks.map((t) => t.author_id));
     w.goal = goalFor(w.members.length);
     w.goalMet = w.sharers.size >= w.goal;
@@ -260,7 +264,7 @@ export function computeTown({ group, members, thanks, visits, today = dayKey() }
     w.after = { pieces, extras, surprises: surprises.length };
   }
 
-  const town = { group, members, start, weeks, surprises, current: weeks[currentIndex], completed: weeks.filter((w) => w.complete) };
+  const town = { group, members, everyone, start, weeks, surprises, current: weeks[currentIndex], completed: weeks.filter((w) => w.complete) };
   town.state = sceneState(town, town.current);
   town.progress = progressAt(town.state.pieces);
   town.news = buildNews(town);
@@ -290,12 +294,12 @@ export function sceneState(town, week, { before = false } = {}) {
     extras: counts.extras,
     surprises: town.surprises.slice(0, counts.surprises),
     spotless,
-    people: (prev ? prev.members : []).map((m) => ({ name: m.name, avatar: m.avatar, status: prev ? statusFor(m.user_id, prev) : 'home' })),
+    people: (prev ? prev.members.filter((m) => !m.left_at) : []).map((m) => ({ name: m.name, avatar: m.avatar, status: prev ? statusFor(m.user_id, prev) : 'home' })),
     visitors: prev ? prev.outsiders.length : 0
   };
 }
 
-const nameOf = (town, id) => town.members.find((m) => m.user_id === id)?.name ?? 'Someone';
+const nameOf = (town, id) => town.everyone.find((m) => m.user_id === id)?.name ?? 'A former member';
 
 // What changed in a finished week, for the Sunday recap.
 export function weekChanges(town, week) {

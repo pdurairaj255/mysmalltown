@@ -95,6 +95,7 @@
   const next = safeNext(params.get('next'));
   const steps = { email: document.getElementById('email-step'), code: document.getElementById('code-step'), profile: document.getElementById('profile-step'), waiting: document.getElementById('waiting-step') };
   const title = document.getElementById('title');
+  if (params.get('deleted')) steps.email.querySelector('p').textContent = 'Your account has been deleted. Thanks for being part of the town.';
   let email = '';
 
   function show(step) {

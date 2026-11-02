@@ -16,7 +16,10 @@ Until it's connected, the app runs in **demo mode**: everything stays on the dev
 
 This creates the tables and the privacy rules: people can only see groups they belong to, and the people in those groups, and nobody can do anything until you approve their account.
 
-> **Already ran an earlier version of the schema?** Don't run `schema.sql` again. Instead, paste [`supabase/migrations/002_approval_and_invite_codes.sql`](supabase/migrations/002_approval_and_invite_codes.sql) into a new query and click **Run**. It adds avatars, account approval and the longer invite codes, and is safe to run more than once.
+> **Already ran an earlier version of the schema?** Don't run `schema.sql` again. Instead, run each update you haven't run yet, in order, each in its own new query. Both are safe to run more than once:
+>
+> 1. [`supabase/migrations/002_approval_and_invite_codes.sql`](supabase/migrations/002_approval_and_invite_codes.sql): avatars, account approval and longer invite codes.
+> 2. [`supabase/migrations/003_delete_my_account.sql`](supabase/migrations/003_delete_my_account.sql): lets people delete their own account without shrinking anyone's town.
 
 ## 3. Set up sign-in emails
 
@@ -109,6 +112,25 @@ where id = (select id from auth.users where email = 'their.email@example.com');
 Or, without SQL: **Table Editor → profiles**, find the person by name, double-click their **approved** cell, choose **TRUE**, and save.
 
 **To remove someone's access** later, run the same update with `approved = false`. They immediately lose access to every group, though their past notes of appreciation stay.
+
+## Deleting accounts
+
+People can delete their own account in the app: **Groups → Delete my account**, then type DELETE to confirm.
+
+To delete someone yourself, run this in the SQL Editor instead of using the dashboard's **Delete user** button:
+
+```sql
+select public.delete_account_by_email('their.email@example.com');
+```
+
+Either way, the same thing happens, all in one step:
+
+- Their sign-in, email, name and avatar are deleted, and the words of every note they wrote are erased.
+- Their past notes and visits stay as anonymous tallies, so every town stays exactly as built: same buildings, same surprises.
+- Notes written *to* them show "A former member".
+- A group they started passes to its longest-standing remaining member, or is deleted if they were the only one in it.
+
+The dashboard's **Delete user** button skips these steps: it fails for anyone who started a group, and otherwise leaves a nameless member behind.
 
 Only approve emails you recognize. Anyone can request an account, but no one sees anything until you say yes.
 

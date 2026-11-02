@@ -7,6 +7,22 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
 export const isDemo = !SUPABASE_URL || !SUPABASE_ANON_KEY;
 
+// Current members get their name and avatar. People who deleted their account
+// become anonymous former members, kept only so past weeks add up the same.
+function splitMembers(rows, profileOf) {
+  const members = [];
+  const formerMembers = [];
+  for (const r of rows) {
+    if (r.left_at) {
+      formerMembers.push({ user_id: r.user_id, joined_at: r.joined_at, left_at: r.left_at, name: 'A former member' });
+    } else {
+      const p = profileOf(r.user_id);
+      members.push({ user_id: r.user_id, joined_at: r.joined_at, name: p?.display_name ?? 'Someone', avatar: p?.avatar });
+    }
+  }
+  return { members, formerMembers };
+}
+
 // ---------- Supabase ----------
 
 function supabaseBackend(sb) {
@@ -49,7 +65,8 @@ function supabaseBackend(sb) {
     async listMyGroups(userId) {
       const { data, error } = await sb.from('memberships')
         .select('joined_at, groups (id, name, town_name, accent, invite_code, created_by, created_at)')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .is('left_at', null);
       if (error) fail(error);
       return data.filter((m) => m.groups).map((m) => ({ ...m.groups, joined_at: m.joined_at }))
         .sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -75,22 +92,16 @@ function supabaseBackend(sb) {
     async loadGroup(groupId) {
       const [g, m, t, v] = await Promise.all([
         sb.from('groups').select('id, name, town_name, accent, invite_code, created_by, created_at').eq('id', groupId).single(),
-        sb.from('memberships').select('user_id, joined_at, profiles (display_name, avatar)').eq('group_id', groupId),
+        sb.from('memberships').select('user_id, joined_at, left_at').eq('group_id', groupId),
         sb.from('thanks').select('id, author_id, recipient_id, recipient_name, body, day, created_at').eq('group_id', groupId).order('created_at'),
         sb.from('visits').select('user_id, day').eq('group_id', groupId)
       ]);
       for (const r of [g, m, t, v]) if (r.error) fail(r.error);
-      return {
-        group: g.data,
-        members: m.data.map((row) => ({
-          user_id: row.user_id,
-          joined_at: row.joined_at,
-          name: row.profiles?.display_name ?? 'Someone',
-          avatar: row.profiles?.avatar
-        })),
-        thanks: t.data,
-        visits: v.data
-      };
+      const ids = m.data.filter((r) => !r.left_at).map((r) => r.user_id);
+      const p = await sb.from('profiles').select('id, display_name, avatar').in('id', ids);
+      if (p.error) fail(p.error);
+      const byId = new Map(p.data.map((row) => [row.id, row]));
+      return { group: g.data, ...splitMembers(m.data, (id) => byId.get(id)), thanks: t.data, visits: v.data };
     },
 
     async shareThanks(row) {
@@ -105,6 +116,13 @@ function supabaseBackend(sb) {
       const { error } = await sb.from('visits')
         .upsert({ group_id: groupId, user_id: cachedUser.id, day }, { onConflict: 'group_id,user_id,day', ignoreDuplicates: true });
       if (error) fail(error);
+    },
+
+    // See delete_my_account() in supabase/schema.sql for exactly what this keeps and erases.
+    async deleteMyAccount() {
+      const { error } = await sb.rpc('delete_my_account');
+      if (error) fail(error);
+      await sb.auth.signOut();
     }
   };
 }
@@ -128,7 +146,6 @@ function demoBackend() {
   };
   const save = (db) => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch { /* storage full or blocked */ } };
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
-  const isMember = (db, gid, uid) => db.memberships.some((m) => m.group_id === gid && m.user_id === uid);
   const me = (db) => {
     if (!db.session) throw new Error('Please sign in first.');
     return db.session;
@@ -170,7 +187,7 @@ function demoBackend() {
 
     async listMyGroups(userId) {
       const db = load();
-      return db.memberships.filter((m) => m.user_id === userId)
+      return db.memberships.filter((m) => m.user_id === userId && !m.left_at)
         .map((m) => ({ ...db.groups.find((g) => g.id === m.group_id), joined_at: m.joined_at }))
         .sort((a, b) => a.created_at.localeCompare(b.created_at));
     },
@@ -193,7 +210,7 @@ function demoBackend() {
       const uid = me(db);
       const group = db.groups.find((g) => squash(g.invite_code) === squash(code));
       if (!group) throw new Error('No group has that code. Check it and try again.');
-      if (!isMember(db, group.id, uid)) {
+      if (!db.memberships.some((m) => m.group_id === group.id && m.user_id === uid)) {
         db.memberships.push({ group_id: group.id, user_id: uid, joined_at: new Date().toISOString() });
         save(db);
       }
@@ -210,12 +227,7 @@ function demoBackend() {
       const db = load();
       return {
         group: db.groups.find((g) => g.id === groupId),
-        members: db.memberships.filter((m) => m.group_id === groupId).map((m) => ({
-          user_id: m.user_id,
-          joined_at: m.joined_at,
-          name: db.profiles[m.user_id]?.display_name ?? 'Someone',
-          avatar: db.profiles[m.user_id]?.avatar
-        })),
+        ...splitMembers(db.memberships.filter((m) => m.group_id === groupId), (id) => db.profiles[id]),
         thanks: db.thanks.filter((t) => t.group_id === groupId).sort((a, b) => a.created_at.localeCompare(b.created_at)),
         visits: db.visits.filter((v) => v.group_id === groupId)
       };
@@ -238,6 +250,36 @@ function demoBackend() {
         db.visits.push({ group_id: groupId, user_id: uid, day });
         save(db);
       }
+    },
+
+    // Mirrors delete_my_account() in supabase/schema.sql.
+    async deleteMyAccount() {
+      const db = load();
+      const uid = me(db);
+      for (const g of db.groups.filter((x) => x.created_by === uid)) {
+        const heir = db.memberships
+          .filter((m) => m.group_id === g.id && m.user_id !== uid && !m.left_at)
+          .sort((a, b) => a.joined_at.localeCompare(b.joined_at) || a.user_id.localeCompare(b.user_id))[0];
+        if (heir) {
+          g.created_by = heir.user_id;
+        } else {
+          db.groups = db.groups.filter((x) => x.id !== g.id);
+          for (const k of ['memberships', 'thanks', 'visits']) db[k] = db[k].filter((r) => r.group_id !== g.id);
+        }
+      }
+      for (const t of db.thanks) {
+        if (t.author_id === uid) {
+          t.body = null;
+          if (!t.recipient_id) t.recipient_name = 'Someone outside the group';
+        }
+        if (t.recipient_id === uid) t.recipient_name = 'A former member';
+      }
+      const now = new Date().toISOString();
+      for (const m of db.memberships) if (m.user_id === uid && !m.left_at) m.left_at = now;
+      delete db.profiles[uid];
+      for (const [email, id] of Object.entries(db.users)) if (id === uid) delete db.users[email];
+      db.session = null;
+      save(db);
     }
   };
 }

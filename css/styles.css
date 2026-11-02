@@ -213,6 +213,9 @@ button { font-family: inherit; color: inherit; }
 .btn:hover { color: var(--ink); filter: brightness(0.97); }
 .btn--md { min-height: 50px; border-radius: 14px; font-size: 15px; }
 .btn--outline { background: var(--surface); border: 2px solid var(--ink); }
+.btn--danger { background: #B3261E; color: #FFFFFF; }
+.btn--danger:hover { color: #FFFFFF; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
 .btn--ghost {
   min-height: 44px;
   border-radius: 12px;

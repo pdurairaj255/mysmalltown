@@ -27,10 +27,15 @@ create table public.groups (
   created_at timestamptz not null default now()
 );
 
+-- user_id in memberships, thanks and visits has no foreign key on purpose:
+-- when someone deletes their account (delete_my_account below) these rows
+-- stay, anonymous, so past weeks and surprises still add up the same.
 create table public.memberships (
   group_id uuid not null references public.groups (id) on delete cascade,
-  user_id uuid not null references public.profiles (id) on delete cascade,
+  user_id uuid not null,
   joined_at timestamptz not null default now(),
+  -- Set when the person deleted their account. Their name and avatar are gone.
+  left_at timestamptz,
   primary key (group_id, user_id)
 );
 
@@ -40,10 +45,11 @@ create table public.memberships (
 create table public.thanks (
   id uuid primary key default gen_random_uuid(),
   group_id uuid not null references public.groups (id) on delete cascade,
-  author_id uuid not null references public.profiles (id) on delete cascade,
-  recipient_id uuid references public.profiles (id) on delete set null,
+  author_id uuid not null,
+  recipient_id uuid,
   recipient_name text not null check (char_length(recipient_name) between 1 and 80),
-  body text not null check (char_length(body) between 1 and 1000),
+  -- Null once the author has deleted their account; the row stays as a tally.
+  body text check (char_length(body) between 1 and 1000),
   day date not null,
   created_at timestamptz not null default now(),
   unique (group_id, author_id, day)
@@ -52,7 +58,7 @@ create table public.thanks (
 -- One row per person per day they opened the group.
 create table public.visits (
   group_id uuid not null references public.groups (id) on delete cascade,
-  user_id uuid not null references public.profiles (id) on delete cascade,
+  user_id uuid not null,
   day date not null,
   primary key (group_id, user_id, day)
 );
@@ -75,7 +81,7 @@ $$;
 create or replace function public.is_member(gid uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select public.is_approved()
-     and exists (select 1 from memberships where group_id = gid and user_id = auth.uid());
+     and exists (select 1 from memberships where group_id = gid and user_id = auth.uid() and left_at is null);
 $$;
 
 create or replace function public.shares_group(other uuid) returns boolean
@@ -83,7 +89,7 @@ language sql stable security definer set search_path = public as $$
   select public.is_approved() and exists (
     select 1 from memberships a
     join memberships b on a.group_id = b.group_id
-    where a.user_id = auth.uid() and b.user_id = other
+    where a.user_id = auth.uid() and a.left_at is null and b.user_id = other
   );
 $$;
 
@@ -167,6 +173,75 @@ revoke execute on function public.join_group(text) from public, anon;
 grant execute on function public.create_group(text, text, text) to authenticated;
 grant execute on function public.join_group(text) to authenticated;
 
+-- Deletes an account without changing any town's past.
+-- In one step: hands each group they started to its longest-standing
+-- remaining member (or deletes the group if they were alone), erases the
+-- words of their notes and their name on notes to them, marks their
+-- memberships as left, and deletes their sign-in, email, name and avatar.
+-- Their notes and visits stay as anonymous tallies, so every past week and
+-- surprise adds up exactly as before.
+create or replace function public.delete_account(me uuid)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  g record;
+  heir uuid;
+begin
+  if me is null then
+    raise exception 'Please sign in first.';
+  end if;
+
+  for g in select id from groups where created_by = me loop
+    select user_id into heir from memberships
+    where group_id = g.id and user_id <> me and left_at is null
+    order by joined_at, user_id
+    limit 1;
+    if heir is null then
+      delete from groups where id = g.id;
+    else
+      update groups set created_by = heir where id = g.id;
+    end if;
+  end loop;
+
+  update thanks
+  set body = null,
+      recipient_name = case when recipient_id is null then 'Someone outside the group' else recipient_name end
+  where author_id = me;
+  update thanks set recipient_name = 'A former member' where recipient_id = me;
+  update memberships set left_at = now() where user_id = me and left_at is null;
+
+  delete from auth.users where id = me;  -- also deletes their profile
+end;
+$$;
+
+-- People delete only themselves, from the app.
+create or replace function public.delete_my_account()
+returns void
+language sql security definer set search_path = public as $$
+  select public.delete_account(auth.uid());
+$$;
+
+-- For the administrator, in the SQL Editor:
+--   select public.delete_account_by_email('their.email@example.com');
+create or replace function public.delete_account_by_email(p_email text)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare
+  target uuid;
+begin
+  select id into target from auth.users where lower(email) = lower(trim(p_email));
+  if target is null then
+    raise exception 'No account uses that email.';
+  end if;
+  perform public.delete_account(target);
+end;
+$$;
+
+revoke execute on function public.delete_account(uuid) from public, anon, authenticated;
+revoke execute on function public.delete_account_by_email(text) from public, anon, authenticated;
+revoke execute on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
+
 -- ---------- Row level security ----------
 
 alter table public.profiles enable row level security;
@@ -199,21 +274,17 @@ grant update (name, town_name, accent) on public.groups to authenticated;
 
 create policy "See who is in your groups" on public.memberships
   for select using (public.is_member(group_id));
-create policy "Leave a group" on public.memberships
-  for delete using (user_id = auth.uid());
 
-create policy "Read your groups' thank-yous" on public.thanks
+create policy "Read your groups' notes" on public.thanks
   for select using (public.is_member(group_id));
-create policy "Share your own thank-you" on public.thanks
+create policy "Share your own note" on public.thanks
   for insert with check (
     author_id = auth.uid()
     and public.is_member(group_id)
     and (recipient_id is null or exists (
-      select 1 from memberships m where m.group_id = thanks.group_id and m.user_id = recipient_id
+      select 1 from memberships m where m.group_id = thanks.group_id and m.user_id = recipient_id and m.left_at is null
     ))
   );
-create policy "Delete your own thank-you" on public.thanks
-  for delete using (author_id = auth.uid());
 
 create policy "See your groups' visits" on public.visits
   for select using (public.is_member(group_id));
