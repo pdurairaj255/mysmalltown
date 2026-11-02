@@ -38,3 +38,5 @@ then visit http://localhost:5173.
 - `js/ui.js` — what every screen does on load: sign-in check, current group, today's visit.
 - `js/app.js` — the bottom tab bar and offline support; `sw.js` is the service worker.
 - `supabase/schema.sql` — tables and privacy rules.
+- `supabase/migrations/` — one-time updates for a database set up from an earlier schema.
+- `supabase/functions/notify-admin/` — emails the administrator when someone signs up and is waiting for approval.

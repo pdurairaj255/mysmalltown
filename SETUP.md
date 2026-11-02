@@ -113,6 +113,59 @@ Or, without SQL: **Table Editor → profiles**, find the person by name, double-
 
 **To remove someone's access** later, run the same update with `approved = false`. They immediately lose access to every group, though their past notes of appreciation stay.
 
+## Email alerts for new sign-ups
+
+Get an email whenever someone signs up and is waiting for your approval. It includes their name and email, plus the exact line to run to approve them. The alert is sent through Gmail, using the same kind of app password as your sign-in emails.
+
+### 1. Make a webhook secret
+
+This is a long random password that only Supabase knows. It stops anyone else from triggering alert emails. To make one, run this in a terminal on your computer:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Copy what it prints. You'll paste it in two places below. Don't share it.
+
+### 2. Add the alert code
+
+1. In Supabase, open **Edge Functions → Deploy a new function → Via Editor**.
+2. Name it exactly `notify-admin`.
+3. Replace the sample code with the whole contents of [`supabase/functions/notify-admin/index.ts`](supabase/functions/notify-admin/index.ts), then click **Deploy**.
+4. Open the function's **Details** (or **Settings**) and turn **off** **Enforce JWT verification**. The webhook secret protects it instead.
+
+### 3. Add its secrets
+
+Open **Edge Functions → Secrets** and add these four:
+
+| Name | Value |
+| --- | --- |
+| `ADMIN_EMAIL` | where you want alerts sent |
+| `GMAIL_USER` | the Gmail address that sends them |
+| `GMAIL_APP_PASSWORD` | that account's 16-letter app password (you can reuse the one from your sign-in email setup) |
+| `WEBHOOK_SECRET` | the random string from step 1 |
+
+### 4. Trigger it on new sign-ups
+
+1. Open **Database → Webhooks** (in newer dashboards, **Integrations → Database Webhooks**). If asked, click **Enable webhooks**.
+2. Click **Create a new hook** and fill in:
+   - **Name:** `notify-admin-new-signup`
+   - **Table:** `profiles`
+   - **Events:** only **Insert**
+   - **Type:** **Supabase Edge Functions**, choosing `notify-admin`, method **POST**
+   - **HTTP Headers:** add `x-webhook-secret` with the random string from step 1
+3. Click **Create webhook**.
+
+### 5. Test it
+
+Sign up in the app with an email that's never been used, then pick a name and avatar. Within a minute, an alert should arrive at `ADMIN_EMAIL`. Check spam the first time.
+
+If nothing arrives, open **Edge Functions → notify-admin → Logs**:
+
+- "Missing secret": one of the secrets in step 3 is misspelled.
+- "Forbidden": the webhook's header doesn't match `WEBHOOK_SECRET`.
+- An authentication error from Gmail: the app password is wrong.
+
 ## Deleting accounts
 
 People can delete their own account in the app: **Groups → Delete my account**, then type DELETE to confirm.
