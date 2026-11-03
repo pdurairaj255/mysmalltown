@@ -98,7 +98,7 @@ The address is public, but that's all a stranger gets: the sign-in page. Nobody 
 
 ## 5. Approve yourself, then invite your family
 
-1. Open the app, sign in with your email, and pick your name and townsperson (20 avatars: kids, teens, adults and grandparents). You'll land on an **"Almost there"** screen, because every new account, yours included, needs approval.
+1. Open the app, sign in with your email, and pick your name and townsperson (40 avatars: kids, teens, adults and grandparents). You'll land on an **"Almost there"** screen, because every new account, yours included, needs approval.
 2. Approve yourself (see **Approving people** below), then tap **Check again** in the app.
 3. Tap **Start a group**, name it, and choose a town name and color.
 4. On the **Groups** tab, tap **Share link** (or **Copy link**) and send it to your family. They sign in with their own email, pick their avatar, and wait for you to approve them. Once approved, the link fills in the invite code for them.

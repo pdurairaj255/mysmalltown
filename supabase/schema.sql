@@ -19,7 +19,7 @@ create table public.profiles (
   account_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   is_kid boolean not null default false,
   display_name text not null check (char_length(display_name) between 1 and 40),
-  -- One of the 20 avatar ids in js/avatars.js (kid-1 … grand-5).
+  -- One of the 40 avatar ids in js/avatars.js (kid-1 … grand-10).
   avatar text not null default 'adult-1' check (avatar ~ '^[a-z]+-[0-9]{1,2}$'),
   -- New accounts wait until an administrator sets this to true. Kids follow
   -- their parent's approval.

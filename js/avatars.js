@@ -1,4 +1,4 @@
-// My Small Town — the 20 townspeople you can choose to be.
+// My Small Town — the 40 townspeople you can choose to be (10 per age group).
 //
 // Each avatar is a recipe (age group, skin, hair, outfit, extras). The same
 // recipe draws both the round portrait used in lists and the small figure
@@ -11,12 +11,13 @@ const SKIN = { s1: '#F6D3B3', s2: '#E8B48A', s3: '#C68A5B', s4: '#9A6440', s5: '
 const HAIR = { black: '#2B2238', dark: '#4A2E1F', brown: '#7A4E2D', red: '#B5532E', blonde: '#E8C15A', gray: '#A9A3BD', white: '#EEEAF6' };
 const SHIRT = { coral: '#FF7A59', violet: '#9B7BFF', sky: '#4FB7FF', mint: '#3DD49A', pink: '#FF7EB6', sun: '#FFD23F' };
 const TINT = { '#FF7A59': '#FFC2B0', '#9B7BFF': '#D4C6FF', '#4FB7FF': '#B5E0FF', '#3DD49A': '#A8F0CF', '#FF7EB6': '#FFC4DD', '#FFD23F': '#FFE98F' };
-const HAT = { beanie: '#FF7A59', cap: '#FFD23F' };
+const HAT = { beanie: '#FF7A59', cap: '#FFD23F', headscarf: '#9B7BFF', turban: '#4FB7FF', sunhat: '#FFE98F', flatcap: '#8F86B5' };
 
 export const AGE_GROUPS = ['Kids', 'Teens', 'Adults', 'Grandparents'];
 
-const make = (id, age, label, skin, hair, hairColor, shirt, extras = []) =>
-  ({ id, age, label, skin: SKIN[skin], hair, hairColor: HAIR[hairColor], shirt: SHIRT[shirt], extras });
+// hat: a SHIRT color name for hats and headscarves (otherwise HAT's default).
+const make = (id, age, label, skin, hair, hairColor, shirt, extras = [], hat = null) =>
+  ({ id, age, label, skin: SKIN[skin], hair, hairColor: HAIR[hairColor], shirt: SHIRT[shirt], extras, hat: hat ? SHIRT[hat] : HAT[hair] });
 
 export const AVATARS = [
   make('kid-1', 'Kids', 'Kid with pigtails', 's2', 'pigtails', 'brown', 'pink', ['cheeks']),
@@ -24,21 +25,41 @@ export const AVATARS = [
   make('kid-3', 'Kids', 'Kid with a curly puff and a bow', 's5', 'puff', 'black', 'mint', ['cheeks', 'bow']),
   make('kid-4', 'Kids', 'Kid with a bowl cut', 's1', 'bowl', 'blonde', 'sky', ['cheeks']),
   make('kid-5', 'Kids', 'Kid with two buns', 's3', 'buns', 'dark', 'coral', ['cheeks']),
+  make('kid-6', 'Kids', 'Kid with braids', 's5', 'braids', 'black', 'violet', ['cheeks']),
+  make('kid-7', 'Kids', 'Kid with red curls and freckles', 's1', 'curlytop', 'red', 'mint', ['cheeks', 'freckles']),
+  make('kid-8', 'Kids', 'Kid with glasses', 's3', 'short', 'black', 'sky', ['cheeks', 'glasses']),
+  make('kid-9', 'Kids', 'Kid in a ball cap', 's2', 'cap', 'blonde', 'sun', ['cheeks'], 'coral'),
+  make('kid-10', 'Kids', 'Kid with a bob and a bow', 's4', 'bob', 'dark', 'pink', ['cheeks', 'bow']),
   make('teen-1', 'Teens', 'Teen with headphones', 's3', 'swoop', 'black', 'violet', ['headphones']),
   make('teen-2', 'Teens', 'Teen with a ponytail', 's1', 'ponytail', 'red', 'mint'),
   make('teen-3', 'Teens', 'Teen in a beanie', 's4', 'beanie', 'black', 'sky'),
   make('teen-4', 'Teens', 'Teen with long hair', 's2', 'long', 'dark', 'pink'),
   make('teen-5', 'Teens', 'Teen in a ball cap', 's5', 'cap', 'black', 'coral'),
+  make('teen-6', 'Teens', 'Teen with locs', 's5', 'locs', 'black', 'mint'),
+  make('teen-7', 'Teens', 'Teen in a headscarf', 's3', 'headscarf', 'black', 'sun', [], 'violet'),
+  make('teen-8', 'Teens', 'Teen with curls and freckles', 's1', 'curlytop', 'brown', 'pink', ['freckles']),
+  make('teen-9', 'Teens', 'Teen with a mohawk', 's4', 'mohawk', 'black', 'sky'),
+  make('teen-10', 'Teens', 'Teen with buns and earrings', 's2', 'buns', 'dark', 'coral', ['earrings']),
   make('adult-1', 'Adults', 'Adult with short hair', 's2', 'short', 'brown', 'sky'),
   make('adult-2', 'Adults', 'Adult with long hair', 's5', 'long', 'black', 'sun'),
   make('adult-3', 'Adults', 'Adult with a beard', 's3', 'short', 'black', 'mint', ['beard']),
   make('adult-4', 'Adults', 'Adult with a bob and glasses', 's1', 'bob', 'blonde', 'coral', ['glasses']),
   make('adult-5', 'Adults', 'Adult with a bun', 's4', 'bun', 'dark', 'violet'),
+  make('adult-6', 'Adults', 'Adult in a headscarf', 's4', 'headscarf', 'black', 'coral', ['earrings'], 'mint'),
+  make('adult-7', 'Adults', 'Adult with locs and a beard', 's5', 'locs', 'black', 'violet', ['beard']),
+  make('adult-8', 'Adults', 'Adult with a side part and glasses', 's1', 'sidepart', 'brown', 'mint', ['glasses']),
+  make('adult-9', 'Adults', 'Adult with braids and earrings', 's3', 'braids', 'black', 'pink', ['earrings']),
+  make('adult-10', 'Adults', 'Adult in a turban with a beard', 's2', 'turban', 'black', 'sun', ['beard'], 'sky'),
   make('grand-1', 'Grandparents', 'Grandparent with glasses', 's1', 'bald', 'white', 'violet', ['glasses', 'cardigan']),
   make('grand-2', 'Grandparents', 'Grandparent with a bun and glasses', 's3', 'bun', 'gray', 'pink', ['glasses', 'cardigan']),
   make('grand-3', 'Grandparents', 'Grandparent with a mustache', 's5', 'short', 'gray', 'sky', ['mustache', 'cardigan']),
   make('grand-4', 'Grandparents', 'Grandparent with white curls', 's2', 'curls', 'white', 'mint', ['cardigan']),
-  make('grand-5', 'Grandparents', 'Grandparent with a beard and glasses', 's4', 'bald', 'gray', 'sun', ['beard', 'glasses', 'cardigan'])
+  make('grand-5', 'Grandparents', 'Grandparent with a beard and glasses', 's4', 'bald', 'gray', 'sun', ['beard', 'glasses', 'cardigan']),
+  make('grand-6', 'Grandparents', 'Grandparent in a sun hat', 's2', 'sunhat', 'white', 'coral', ['glasses', 'cardigan']),
+  make('grand-7', 'Grandparents', 'Grandparent in a flat cap with a mustache', 's3', 'flatcap', 'gray', 'mint', ['mustache', 'cardigan']),
+  make('grand-8', 'Grandparents', 'Grandparent in a headscarf with glasses', 's5', 'headscarf', 'black', 'violet', ['glasses', 'cardigan'], 'pink'),
+  make('grand-9', 'Grandparents', 'Grandparent with a white bob and earrings', 's1', 'bob', 'white', 'sky', ['earrings', 'cardigan']),
+  make('grand-10', 'Grandparents', 'Grandparent with gray locs and glasses', 's5', 'locs', 'gray', 'sun', ['glasses', 'cardigan'])
 ];
 
 export const DEFAULT_AVATAR = 'adult-1';
@@ -72,6 +93,14 @@ function hairBack(v, { cx, cy, r }) {
       return [-1, 1].map((s) => `<circle cx="${n(cx + s * 0.68 * r)}" cy="${n(cy - 1.0 * r)}" r="${n(0.42 * r)}" ${f}/>`).join('');
     case 'bun':
       return `<circle cx="${cx}" cy="${n(cy - 1.25 * r)}" r="${n(0.45 * r)}" ${f}/>`;
+    case 'braids':
+      return [-1, 1].map((k) => `<rect x="${n(cx + (k < 0 ? -1.2 : 0.86) * r)}" y="${n(cy - 0.3 * r)}" width="${n(0.34 * r)}" height="${n(2.05 * r)}" rx="${n(0.17 * r)}" ${f}/>`
+        + `<rect x="${n(cx + (k < 0 ? -1.21 : 0.85) * r)}" y="${n(cy + 1.45 * r)}" width="${n(0.36 * r)}" height="${n(0.14 * r)}" fill="${SHIRT.sun}"/>`).join('');
+    case 'locs':
+      return [-1.18, -0.92, 0.92, 1.18].map((x) => `<rect x="${n(cx + x * r - 0.13 * r)}" y="${n(cy - 0.7 * r)}" width="${n(0.26 * r)}" height="${n(2.25 * r)}" rx="${n(0.13 * r)}" ${f}/>`).join('');
+    case 'headscarf':
+      // The scarf wraps the head and falls to the shoulders; the face shows through.
+      return `<path d="M${n(cx - 1.3 * r)} ${n(cy + 1.7 * r)} Q${n(cx - 1.42 * r)} ${n(cy - 1.5 * r)} ${cx} ${n(cy - 1.45 * r)} Q${n(cx + 1.42 * r)} ${n(cy - 1.5 * r)} ${n(cx + 1.3 * r)} ${n(cy + 1.7 * r)} Z" fill="${v.hat}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`;
     default:
       return '';
   }
@@ -89,9 +118,11 @@ function dome(cx, cy, r, color) {
 function hairFront(v, { cx, cy, r }) {
   const f = `fill="${v.hairColor}" stroke="${INK}" stroke-width="${n(r * 0.09)}"`;
   const sides = [-1, 1].map((s) => `<rect x="${n(cx + (s < 0 ? -1.02 : 0.74) * r)}" y="${n(cy - 0.35 * r)}" width="${n(0.28 * r)}" height="${n(0.65 * r)}" ${f}/>`).join('');
+  // Curved hair hugging the sides of the head (bald tops, and under grown-up hats).
+  const tufts = [-1, 1].map((k) => `<path d="M${n(cx + k * 0.99 * r)} ${n(cy + 0.2 * r)} Q${n(cx + k * 1.16 * r)} ${n(cy - 0.45 * r)} ${n(cx + k * 0.72 * r)} ${n(cy - 0.78 * r)} Q${n(cx + k * 0.82 * r)} ${n(cy - 0.3 * r)} ${n(cx + k * 0.72 * r)} ${n(cy + 0.08 * r)} Z" ${f}/>`).join('');
   switch (v.hair) {
     case 'bald':
-      return [-1, 1].map((k) => `<path d="M${n(cx + k * 0.99 * r)} ${n(cy + 0.2 * r)} Q${n(cx + k * 1.16 * r)} ${n(cy - 0.45 * r)} ${n(cx + k * 0.72 * r)} ${n(cy - 0.78 * r)} Q${n(cx + k * 0.82 * r)} ${n(cy - 0.3 * r)} ${n(cx + k * 0.72 * r)} ${n(cy + 0.08 * r)} Z" ${f}/>`).join('');
+      return tufts;
     case 'spiky': {
       const pts = [[-1, -0.2], [-0.85, -1.25], [-0.5, -0.95], [-0.2, -1.45], [0.1, -1.0], [0.45, -1.4], [0.65, -0.95], [0.95, -1.2], [1, -0.2], [0.5, -0.6], [-0.5, -0.6]];
       return `<polygon points="${pts.map(([x, y]) => `${n(cx + x * r)},${n(cy + y * r)}`).join(' ')}" ${f}/>`;
@@ -103,14 +134,34 @@ function hairFront(v, { cx, cy, r }) {
     case 'curls':
       return [[-0.6, -0.72, 0.45], [0, -0.92, 0.5], [0.6, -0.72, 0.45]].map(([x, y, s]) => `<circle cx="${n(cx + x * r)}" cy="${n(cy + y * r)}" r="${n(s * r)}" ${f}/>`).join('');
     case 'beanie':
-      return sides + dome(cx, cy, r, HAT.beanie)
-        + `<rect x="${n(cx - 1.12 * r)}" y="${n(cy - 0.5 * r)}" width="${n(2.24 * r)}" height="${n(0.36 * r)}" rx="${n(0.12 * r)}" fill="${HAT.beanie}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`
+      return sides + dome(cx, cy, r, v.hat)
+        + `<rect x="${n(cx - 1.12 * r)}" y="${n(cy - 0.5 * r)}" width="${n(2.24 * r)}" height="${n(0.36 * r)}" rx="${n(0.12 * r)}" fill="${v.hat}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`
         + `<circle cx="${cx}" cy="${n(cy - 1.4 * r)}" r="${n(0.28 * r)}" fill="#FFFFFF" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`;
     case 'cap':
-      return sides + dome(cx, cy, r, HAT.cap)
-        + `<path d="M${n(cx + 0.2 * r)} ${n(cy - 0.5 * r)} L${n(cx + 1.6 * r)} ${n(cy - 0.42 * r)} Q${n(cx + 1.66 * r)} ${n(cy - 0.24 * r)} ${n(cx + 1.42 * r)} ${n(cy - 0.2 * r)} L${n(cx + 0.2 * r)} ${n(cy - 0.28 * r)} Z" fill="${HAT.cap}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`;
+      return sides + dome(cx, cy, r, v.hat)
+        + `<path d="M${n(cx + 0.2 * r)} ${n(cy - 0.5 * r)} L${n(cx + 1.6 * r)} ${n(cy - 0.42 * r)} Q${n(cx + 1.66 * r)} ${n(cy - 0.24 * r)} ${n(cx + 1.42 * r)} ${n(cy - 0.2 * r)} L${n(cx + 0.2 * r)} ${n(cy - 0.28 * r)} Z" fill="${v.hat}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`;
     case 'ponytail':
       return topCap(cx, cy, r, f) + `<circle cx="${n(cx + 1.02 * r)}" cy="${n(cy - 0.2 * r)}" r="${n(0.3 * r)}" fill="${SHIRT.sun}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`;
+    case 'curlytop':
+      return [[-0.72, -0.55, 0.36], [-0.32, -0.88, 0.42], [0.15, -0.95, 0.42], [0.58, -0.78, 0.4], [0.85, -0.42, 0.3]]
+        .map(([x, y, sz]) => `<circle cx="${n(cx + x * r)}" cy="${n(cy + y * r)}" r="${n(sz * r)}" ${f}/>`).join('');
+    case 'sidepart':
+      return topCap(cx, cy, r, f) + `<path d="M${n(cx - 0.35 * r)} ${n(cy - 1.12 * r)} Q${n(cx + 0.7 * r)} ${n(cy - 1.2 * r)} ${n(cx + 1.05 * r)} ${n(cy - 0.25 * r)} Q${n(cx + 0.45 * r)} ${n(cy - 0.85 * r)} ${n(cx - 0.35 * r)} ${n(cy - 0.7 * r)} Z" ${f}/>`;
+    case 'mohawk':
+      return `<path d="M${n(cx - 0.28 * r)} ${n(cy - 0.75 * r)} Q${n(cx - 0.3 * r)} ${n(cy - 1.75 * r)} ${cx} ${n(cy - 1.85 * r)} Q${n(cx + 0.3 * r)} ${n(cy - 1.75 * r)} ${n(cx + 0.28 * r)} ${n(cy - 0.75 * r)} Z" ${f}/>`;
+    case 'locs':
+      return topCap(cx, cy, r, f) + [-0.45, 0, 0.45].map((x) => `<line x1="${n(cx + x * r)}" y1="${n(cy - 1.05 * r)}" x2="${n(cx + x * 1.3 * r)}" y2="${n(cy - 0.62 * r)}" stroke="${INK}" stroke-width="${n(r * 0.06)}"/>`).join('');
+    case 'headscarf':
+      return `<path d="M${n(cx - 1.02 * r)} ${n(cy - 0.05 * r)} Q${n(cx - 1.05 * r)} ${n(cy - 1.15 * r)} ${cx} ${n(cy - 1.12 * r)} Q${n(cx + 1.05 * r)} ${n(cy - 1.15 * r)} ${n(cx + 1.02 * r)} ${n(cy - 0.05 * r)} Q${n(cx + 0.6 * r)} ${n(cy - 0.62 * r)} ${cx} ${n(cy - 0.6 * r)} Q${n(cx - 0.6 * r)} ${n(cy - 0.62 * r)} ${n(cx - 1.02 * r)} ${n(cy - 0.05 * r)} Z" fill="${v.hat}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`;
+    case 'turban':
+      return `<path d="M${n(cx - 1.1 * r)} ${n(cy - 0.2 * r)} Q${n(cx - 1.25 * r)} ${n(cy - 1.65 * r)} ${cx} ${n(cy - 1.6 * r)} Q${n(cx + 1.25 * r)} ${n(cy - 1.65 * r)} ${n(cx + 1.1 * r)} ${n(cy - 0.2 * r)} Q${cx} ${n(cy - 0.62 * r)} ${n(cx - 1.1 * r)} ${n(cy - 0.2 * r)} Z" fill="${v.hat}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`
+        + `<path d="M${n(cx - 0.85 * r)} ${n(cy - 0.55 * r)} Q${n(cx - 0.1 * r)} ${n(cy - 1.5 * r)} ${n(cx + 0.9 * r)} ${n(cy - 1.0 * r)}" fill="none" stroke="${INK}" stroke-width="${n(r * 0.08)}"/>`;
+    case 'sunhat':
+      return tufts + `<ellipse cx="${cx}" cy="${n(cy - 0.62 * r)}" rx="${n(1.75 * r)}" ry="${n(0.36 * r)}" fill="${v.hat}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`
+        + `<path d="M${n(cx - 0.85 * r)} ${n(cy - 0.7 * r)} Q${n(cx - 0.85 * r)} ${n(cy - 1.55 * r)} ${cx} ${n(cy - 1.55 * r)} Q${n(cx + 0.85 * r)} ${n(cy - 1.55 * r)} ${n(cx + 0.85 * r)} ${n(cy - 0.7 * r)} Z" fill="${v.hat}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`
+        + `<rect x="${n(cx - 0.85 * r)}" y="${n(cy - 0.95 * r)}" width="${n(1.7 * r)}" height="${n(0.22 * r)}" fill="${SHIRT.coral}"/>`;
+    case 'flatcap':
+      return tufts + `<path d="M${n(cx - 1.08 * r)} ${n(cy - 0.35 * r)} Q${n(cx - 1.0 * r)} ${n(cy - 1.25 * r)} ${n(cx + 0.1 * r)} ${n(cy - 1.2 * r)} Q${n(cx + 1.05 * r)} ${n(cy - 1.15 * r)} ${n(cx + 1.45 * r)} ${n(cy - 0.45 * r)} Q${n(cx + 0.3 * r)} ${n(cy - 0.55 * r)} ${n(cx - 1.08 * r)} ${n(cy - 0.35 * r)} Z" fill="${v.hat}" stroke="${INK}" stroke-width="${n(r * 0.09)}"/>`;
     default: // short, long, bob, puff, pigtails, buns, bun
       return topCap(cx, cy, r, f);
   }
@@ -120,6 +171,9 @@ function face(v, { cx, cy, r }) {
   const s = [];
   const has = (x) => v.extras.includes(x);
   const line = `stroke="${INK}" stroke-width="${n(0.12 * r)}" stroke-linecap="round" fill="none"`;
+  if (has('freckles')) s.push([-1, 1].map((k) => [[0.5, 0.28], [0.66, 0.36], [0.56, 0.44]]
+    .map(([x, y]) => `<circle cx="${n(cx + k * x * r)}" cy="${n(cy + y * r)}" r="${n(0.06 * r)}" fill="#B5532E" opacity="0.7"/>`).join('')).join(''));
+  if (has('earrings')) s.push([-1, 1].map((k) => `<circle cx="${n(cx + k * 0.98 * r)}" cy="${n(cy + 0.52 * r)}" r="${n(0.14 * r)}" fill="${SHIRT.sun}" stroke="${INK}" stroke-width="${n(r * 0.05)}"/>`).join(''));
   if (has('cheeks')) s.push([-1, 1].map((k) => `<circle cx="${n(cx + k * 0.58 * r)}" cy="${n(cy + 0.36 * r)}" r="${n(0.18 * r)}" fill="#FF7EB6" opacity="0.55"/>`).join(''));
   s.push([-1, 1].map((k) => `<circle cx="${n(cx + k * 0.37 * r)}" cy="${n(cy + 0.07 * r)}" r="${n(0.12 * r)}" fill="${INK}"/>`).join(''));
   if (has('beard')) {

@@ -42,7 +42,7 @@ export function setActivePerson(id) {
   session.set('mst.whoChosen', '1');
 }
 
-// The 20 avatars as radio buttons, grouped by age. name: the radio group name.
+// Every avatar as a radio button, grouped by age. name: the radio group name.
 export function avatarPicker(name = 'avatar') {
   return AGE_GROUPS.map((age) => `
     <fieldset class="avatar-group">

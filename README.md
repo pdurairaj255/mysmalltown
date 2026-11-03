@@ -34,7 +34,7 @@ then visit http://localhost:5173.
 - `js/config.js` — your Supabase project URL and public key.
 - `js/api.js` — all data access, with a Supabase backend and a demo backend that share one interface.
 - `js/town.js` — the town's growth rules and the drawing of the town scene.
-- `js/avatars.js` — the 20 avatars, drawn as round portraits and as figures in town.
+- `js/avatars.js` — the 40 avatars (10 per age group), drawn as round portraits and as figures in town.
 - `js/surprises.js` — the surprise a 3-day visit streak brings, and how each one is drawn.
 - `js/ui.js` — what every screen does on load: sign-in check, who's using the app, current group, today's visit.
 - `js/app.js` — the bottom tab bar and offline support; `sw.js` is the service worker.
