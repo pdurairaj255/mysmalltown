@@ -100,6 +100,8 @@ This gives the app a web address your family can open on any phone or computer. 
    - **Redirect URLs:** add the same address followed by `/**`, for example `https://mysmalltown.pages.dev/**`
 7. Open the address on your phone and sign in to check it works.
 
+If Cloudflare set the project up as a Worker instead of Pages, your address ends in `workers.dev`, like `https://mysmalltown.yourname.workers.dev`. That works just the same: use that address in step 6.
+
 The address is public, but that's all a stranger gets: the sign-in page. Nobody sees anything until you approve them, and search engines are told not to list the site. Settings live in two files in the repo: [`_headers`](_headers) and [`_redirects`](_redirects).
 
 ### Moving from Netlify
