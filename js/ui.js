@@ -62,7 +62,11 @@ export function avatarPicker(name = 'avatar') {
 export function safeNext(value, fallback = 'index.html') {
   return /^[a-z-]+\.html(\?[\w=&%.-]*)?$/.test(value || '') ? value : fallback;
 }
-const herePage = () => (location.pathname.split('/').pop() || 'index.html') + location.search;
+// Cloudflare Pages serves /town.html at /town, so name pages the same way either way.
+const herePage = () => {
+  const page = location.pathname.split('/').pop() || 'index';
+  return (page.endsWith('.html') ? page : `${page}.html`) + location.search;
+};
 
 function showDemoBanner() {
   if (document.querySelector('.demo-banner')) return;

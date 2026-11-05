@@ -1,0 +1,4 @@
+# The admin files don't need to be served to anyone.
+/supabase/* / 302
+/SETUP.md / 302
+/README.md / 302

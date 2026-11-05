@@ -5,9 +5,8 @@
 // behind. Data from the Supabase API is never cached.
 // Bump CACHE when the file list changes.
 
-const CACHE = 'mst-v10';
+const CACHE = 'mst-v11';
 const APP_FILES = [
-  './',
   'index.html',
   'signin.html',
   'share.html',
@@ -34,8 +33,29 @@ const APP_FILES = [
 ];
 const CACHEABLE_HOSTS = [self.location.host, 'fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net'];
 
+// Cloudflare Pages redirects /town.html to /town and /index.html to /. A
+// response that went through a redirect can't answer a page load, so keep a
+// clean copy of it instead.
+async function clean(res) {
+  if (!res.redirected) return res;
+  return new Response(await res.blob(), { status: res.status, statusText: res.statusText, headers: res.headers });
+}
+
+// The one cache address for a page, however it was reached: /, /town, /town.html?x=1.
+function pageKey(address) {
+  const url = new URL(address);
+  const last = url.pathname.split('/').pop();
+  if (!last) url.pathname += 'index.html';
+  else if (!last.includes('.')) url.pathname += '.html';
+  return url.origin + url.pathname;
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(APP_FILES)));
+  event.waitUntil(caches.open(CACHE).then((cache) => Promise.all(APP_FILES.map(async (file) => {
+    const res = await fetch(file, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`Could not cache ${file}`);
+    await cache.put(file, await clean(res));
+  }))));
   self.skipWaiting();
 });
 
@@ -57,12 +77,15 @@ self.addEventListener('fetch', (event) => {
       // Fetch by URL: a navigation request can't take options. no-cache = always
       // check the server for a newer version.
       fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' })
+        .then(clean)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(req, copy));
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((cache) => cache.put(pageKey(req.url), copy));
+          }
           return res;
         })
-        .catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || caches.match('index.html')))
+        .catch(() => caches.match(pageKey(req.url)).then((hit) => hit || caches.match('index.html')))
     );
     return;
   }

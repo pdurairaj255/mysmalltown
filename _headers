@@ -1,0 +1,10 @@
+# Cloudflare Pages response headers (see SETUP.md, "Put the app online").
+# Keep the site out of search engines and out of other sites' frames, and
+# don't leak the page address to links people tap. Cloudflare already tells
+# browsers to check for new versions of every file on each visit.
+/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

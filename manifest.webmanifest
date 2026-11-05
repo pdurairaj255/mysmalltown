@@ -3,7 +3,7 @@
   "short_name": "Small Town",
   "description": "Share one note of appreciation a day and watch your group's town grow.",
   "id": "./",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

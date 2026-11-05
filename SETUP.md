@@ -36,8 +36,8 @@ This creates the tables and the privacy rules: people can only see groups they b
    The code matters for people who install the app on their phone: links in emails open in the browser, not in the installed app, so they type the code instead.
 
 3. Open **Authentication → URL Configuration**:
-   - **Site URL**: the app's address, for example `https://pdurairaj255.github.io/mysmalltown/`
-   - **Redirect URLs**: add `https://pdurairaj255.github.io/mysmalltown/**` and, for testing on your computer, `http://localhost:5173/**`
+   - **Site URL**: the app's address, for example `https://mysmalltown.pages.dev` (see step 4d)
+   - **Redirect URLs**: add `https://mysmalltown.pages.dev/**` and, for testing on your computer, `http://localhost:5173/**`
 
 > **Email limits.** Supabase's built-in email service only sends a few emails per hour, which is fine while a handful of family members sign in once each. If people hit "rate limit" errors, connect a free email service such as [Resend](https://resend.com) under **Authentication → Emails → SMTP Settings**.
 
@@ -81,20 +81,36 @@ Right now the app doesn't know your Supabase project exists, so it runs in demo 
 
 Open the app. If the dark **"Demo mode"** strip at the top is gone and the sign-in page says **"Email me a sign-in code"**, the app is connected.
 
-## 4d. Put the app online (Netlify, free)
+## 4d. Put the app online (Cloudflare Pages, free)
 
-This gives the app a web address your family can open on any phone or computer. It works with a private GitHub repo, and every time a change is pushed to GitHub, the site updates by itself within a minute or two.
+This gives the app a web address your family can open on any phone or computer. It works with a private GitHub repo, adds no badge or toolbar, and every time a change is pushed to GitHub, the site updates by itself within a minute or two.
 
-1. Go to [netlify.com](https://www.netlify.com), click **Sign up**, and choose **Sign up with GitHub**.
-2. Click **Add new site → Import an existing project → GitHub**. Netlify asks for access to your repositories: choose **Only select repositories**, pick `mysmalltown`, and approve.
-3. On the settings screen, leave **Build command** empty and set **Publish directory** to `.` (the [`netlify.toml`](netlify.toml) file fills these in). Click **Deploy**.
-4. Netlify gives the site a random address like `jolly-otter-123.netlify.app`. To choose a nicer one, go to **Site configuration → Change site name**, for example `mysmalltown-reyes`. The address becomes `https://mysmalltown-reyes.netlify.app`.
-5. Tell Supabase about the address: **Authentication → URL Configuration**.
-   - **Site URL:** your Netlify address, for example `https://mysmalltown-reyes.netlify.app`
-   - **Redirect URLs:** add the same address followed by `/**`, for example `https://mysmalltown-reyes.netlify.app/**`
-6. Open the address on your phone and sign in to check it works.
+1. Go to [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up) and create a free account.
+2. In the left sidebar, open **Workers & Pages** (under **Compute**) and click **Create application**. Cloudflare points you toward Workers first: choose **Pages** (it may be a small link reading **Get started** next to "Looking to deploy Pages?"), then **Import an existing Git repository**.
+3. Click **Connect GitHub**. When GitHub asks for access, choose **Only select repositories**, pick `mysmalltown`, and approve. Back in Cloudflare, select the repo and click **Begin setup**.
+4. Fill in the settings:
+   - **Project name:** this becomes your address. `mysmalltown` gives `https://mysmalltown.pages.dev` (Cloudflare adds a few letters if the name is taken).
+   - **Production branch:** `main`
+   - **Framework preset:** None
+   - **Build command:** leave empty
+   - **Build output directory:** `/`
+5. Click **Save and Deploy**, then wait for it to finish.
+6. Tell Supabase about the address: **Authentication → URL Configuration**.
+   - **Site URL:** your address, for example `https://mysmalltown.pages.dev`
+   - **Redirect URLs:** add the same address followed by `/**`, for example `https://mysmalltown.pages.dev/**`
+7. Open the address on your phone and sign in to check it works.
 
-The address is public, but that's all a stranger gets: the sign-in page. Nobody sees anything until you approve them, and search engines are told not to list the site.
+The address is public, but that's all a stranger gets: the sign-in page. Nobody sees anything until you approve them, and search engines are told not to list the site. Settings live in two files in the repo: [`_headers`](_headers) and [`_redirects`](_redirects).
+
+### Moving from Netlify
+
+Your data lives in Supabase, so nothing is lost in the move. Do these steps once the Cloudflare address works:
+
+1. Send your family the new address. Each person signs in once with an emailed code, because sign-ins are saved per address.
+2. Anyone who installed the app on their phone should delete the old icon and add the new address to their home screen.
+3. In Supabase, remove the old `netlify.app` address from **Redirect URLs**.
+4. In Netlify, delete the site: **Site configuration → General → Danger zone → Delete this site**.
+5. In GitHub, remove Netlify's access: **Settings → Applications → Installed GitHub Apps → Netlify → Configure → Uninstall**.
 
 ## 5. Approve yourself, then invite your family
 
