@@ -14,7 +14,7 @@
 
 import { esc, dayKey, addDays, daysBetween, mondayOf, possessive, listNames } from './util.js';
 import { figure } from './avatars.js';
-import { rollSurprise, surpriseTitle, surpriseDetail, describeSurprises, drawSurprises, drawSpotless } from './surprises.js';
+import { rollSurprise, petNames, surpriseTitle, surpriseDetail, describeSurprises, drawSurprises, drawSpotless } from './surprises.js';
 
 const INK = '#221A47';
 const SLAB = '#8F86B5';
@@ -202,13 +202,25 @@ export const STATUS = {
 };
 
 export function statusText(status, buildingName) {
-  const site = buildingName.toLowerCase();
+  const name = buildingName.toLowerCase();
+  const site = /^(more|first) /.test(name) ? name : `the ${name}`;
   return {
-    leading: `Leading the crew on the ${site}`,
-    helping: `Helping build the ${site}`,
+    leading: `Leading the crew on ${site}`,
+    helping: `Helping build ${site}`,
     out: 'Out and about in town',
     home: 'Relaxing at home'
   }[status];
+}
+
+// Keeps the first item for each day (and key), so multiple notes count once.
+function onePerDay(items, keyOf) {
+  const seen = new Set();
+  return items.filter((t) => {
+    const key = `${t.day}:${keyOf(t)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export const goalFor = (memberCount) => Math.max(1, Math.ceil((memberCount * 2) / 3));
@@ -244,6 +256,7 @@ export function computeTown({ group, members, formerMembers = [], thanks, visits
 
   let pieces = 0, extras = 0;
   const surprises = [];
+  const usedPetNames = new Set();
   for (const w of weeks) {
     w.members = everyone.filter((m) => dayKey(m.joined_at) <= w.end && (!m.left_at || dayKey(m.left_at) >= w.start));
     w.sharers = new Set(w.thanks.map((t) => t.author_id));
@@ -253,8 +266,13 @@ export function computeTown({ group, members, formerMembers = [], thanks, visits
     w.surprises = [...w.visitDays].filter(([, days]) => days.length >= 3)
       .map(([user_id, days]) => ({ user_id, day: days.sort()[2], ...rollSurprise(group.id, w.index, user_id) }))
       .sort((a, b) => a.day.localeCompare(b.day) || a.user_id.localeCompare(b.user_id));
+    for (const x of w.surprises) {
+      if (x.kind === 'pet') x.names = petNames(`${group.id}:${w.index}:${x.user_id}`, x.type === 'chickens' ? 2 : 1, usedPetNames);
+    }
     w.cleanup = w.surprises.some((x) => x.kind === 'cleanup');
-    w.outsiders = w.thanks.filter((t) => !t.recipient_id);
+    // People can share several notes a day, but growth counts each person once
+    // a day: at most one visitor per person per day.
+    w.outsiders = onePerDay(w.thanks.filter((t) => !t.recipient_id), (t) => t.author_id);
     w.before = { pieces, extras, surprises: surprises.length };
     surprises.push(...w.surprises);
     if (w.complete) {
@@ -272,8 +290,9 @@ export function computeTown({ group, members, formerMembers = [], thanks, visits
 }
 
 export function statusFor(userId, week) {
-  const shared = week.thanks.filter((t) => t.author_id === userId).length;
-  const received = week.thanks.filter((t) => t.recipient_id === userId).length;
+  // Counted per day, so extra notes on one day don't make someone busier in town.
+  const shared = onePerDay(week.thanks.filter((t) => t.author_id === userId), () => '').length;
+  const received = onePerDay(week.thanks.filter((t) => t.recipient_id === userId), (t) => t.author_id).length;
   if (shared >= 2 || (shared >= 1 && received >= 2)) return 'leading';
   if (shared >= 1) return 'helping';
   if ((week.visitDays.get(userId) || []).length) return 'out';
@@ -378,7 +397,7 @@ function drawing(accent) {
       `<line x1="${hx}" y1="${my1 + 2}" x2="${hx}" y2="${hy}" stroke="${INK}" stroke-width="1.5"/>` + d.rect(hx - 9, hy, 18, 4, 'accent', `stroke="${INK}"`),
     sparkle: (x, y) => `<path d="M${x} ${y - 8} L${x + 2} ${y - 2} L${x + 8} ${y} L${x + 2} ${y + 2} L${x} ${y + 8} L${x - 2} ${y + 2} L${x - 8} ${y} L${x - 2} ${y - 2} Z" ${fill('accent')} stroke="${INK}" stroke-width="1"/>`,
     tag(x, y, name) {
-      const label = esc(name.split(' ')[0].slice(0, 10));
+      const label = esc(name.includes(' & ') ? name : name.split(' ')[0].slice(0, 10));
       const w = Math.max(24, label.length * 4.6 + 9);
       return `<rect x="${x - w / 2}" y="${y}" width="${w}" height="11" rx="5.5" fill="#FFFFFF" stroke="${INK}" stroke-width="0.8"/><text x="${x}" y="${y + 8.3}" text-anchor="middle" font-family="Figtree, sans-serif" font-size="8" font-weight="700" fill="${INK}">${label}</text>`;
     }
@@ -392,10 +411,10 @@ function extraAt(i, d) {
 }
 
 // state: { pieces, extras, surprises: [{ kind, type }], spotless, people: [{ name, avatar, status }], visitors }
-// opts:  { accent (literal color, for exported images), labels, since (an
+// opts:  { accent (literal color, for exported images), labels, petLabels, since (an
 //          earlier state; new things get sparkles), viewBox, title }
 export function renderScene(state, opts = {}) {
-  const { accent, labels = true, since = null, viewBox = '0 0 350 260', title } = opts;
+  const { accent, labels = true, petLabels = false, since = null, viewBox = '0 0 350 260', title } = opts;
   const d = drawing(accent);
   const parts = [
     `<rect x="0" y="0" width="350" height="260" fill="#B5E0FF"/>`,
@@ -423,7 +442,7 @@ export function renderScene(state, opts = {}) {
     }
   }
 
-  const surprises = drawSurprises(state.surprises || [], { accentFill: d.fill('accent'), light: d.light });
+  const surprises = drawSurprises(state.surprises || [], { accentFill: d.fill('accent'), light: d.light, tag: petLabels ? d.tag : null });
   parts.push(surprises.parts);
   if (state.spotless) parts.push(drawSpotless());
 

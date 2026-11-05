@@ -54,7 +54,7 @@
 <script type="module">
   import { boot, avatar, tintOf, showError } from './js/ui.js';
   import { renderScene, describeScene } from './js/town.js';
-  import { esc, relativeDay } from './js/util.js';
+  import { esc, relativeDay, NOTES_PER_DAY } from './js/util.js';
 
   const main = document.getElementById('main');
   try {
@@ -93,7 +93,8 @@
       document.getElementById('switch').hidden = false;
       const nameOf = (id) => data.members.find((m) => m.user_id === id);
       const latest = town.news.find((n) => n.kind === 'build') || town.news[0];
-      const sharedToday = data.thanks.some((t) => t.author_id === me.user_id && t.day === today);
+      const sharedToday = data.thanks.filter((t) => t.author_id === me.user_id && t.day === today).length;
+      const notesLeft = NOTES_PER_DAY - sharedToday;
       const lastWeek = town.completed[town.completed.length - 1];
       const feed = [...town.current.thanks].reverse();
 
@@ -120,9 +121,9 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
         </a>` : ''}
 
-        ${sharedToday
-          ? `<a class="btn btn--outline" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>You shared today's note of appreciation</a>`
-          : `<a class="btn" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Share today's note of appreciation</a>`}
+        ${notesLeft <= 0
+          ? `<a class="btn btn--outline" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>You shared ${NOTES_PER_DAY} notes today</a>`
+          : `<a class="btn" href="share.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>${sharedToday ? `Share another note (${notesLeft} left today)` : "Share today's note of appreciation"}</a>`}
 
         <section class="stack stack-12" aria-label="This week's notes of appreciation">
           <h2 class="section-title">This week's notes of appreciation</h2>

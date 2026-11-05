@@ -71,7 +71,8 @@
 <script type="module">
   import { boot, api, avatar, ACCENTS, showError, toast } from './js/ui.js';
   import { renderScene, describeScene, BUILDINGS, STATUS, statusFor, statusText } from './js/town.js';
-  import { surpriseTitle } from './js/surprises.js';
+  import { surpriseTitle, petSummary, petIcon } from './js/surprises.js';
+  import { addTownZoom } from './js/townview.js';
   import { esc, relativeDay, addDays, listNames } from './js/util.js';
 
   const main = document.getElementById('main');
@@ -96,6 +97,7 @@
     people.sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
 
     const myDays = new Set(week.visitDays.get(me.user_id) || []);
+    const pets = town.surprises.filter((x) => x.kind === 'pet');
     const mySurprise = week.surprises.find((x) => x.user_id === me.user_id);
     const othersBrought = week.surprises.filter((x) => x.user_id !== me.user_id).map((x) => data.members.find((m) => m.user_id === x.user_id)).filter(Boolean);
     const left = Math.max(0, week.goal - week.sharers.size);
@@ -143,7 +145,7 @@
             <span class="eyebrow">Building now</span>
             <span class="tag tag--status ${week.goalMet ? 'bg-mint-tint' : 'bg-sun-tint'}">${week.goalMet ? 'On track' : `${left} more needed`}</span>
           </div>
-          <h2 style="font-family: var(--font-display); font-size: 21px; font-weight: 800">The ${esc(p.building.name.toLowerCase())}</h2>
+          <h2 style="font-family: var(--font-display); font-size: 21px; font-weight: 800">${esc(p.building.name)}</h2>
           ${stageBars}`}
         <div class="inset" style="gap: 4px">
           <div class="row" style="justify-content: space-between; align-items: baseline; gap: 10px">
@@ -179,6 +181,20 @@
         </div>
       </section>
 
+      ${pets.length ? `
+      <section class="card" aria-label="Pets in town">
+        <h2 class="section-title">Pets in town</h2>
+        <ul class="stack">
+          ${pets.map((x) => {
+            const pet = petSummary(x);
+            const owner = data.members.find((m) => m.user_id === x.user_id);
+            return `<li class="list-row list-row--center">${petIcon(x.type)}
+              <div class="stack stack-1 grow"><span class="item-title">${esc(pet.names)}</span><span class="item-sub">The ${esc(pet.kind)}${owner ? `, thanks to ${esc(owner.name)}` : ''}</span></div>
+            </li>`;
+          }).join('')}
+        </ul>
+      </section>` : ''}
+
       <section class="stack stack-10" aria-label="Built so far">
         <h2 class="section-title">Built so far</h2>
         <ol class="milestones">
@@ -202,6 +218,8 @@
           }).join('')}
         </div>
       </section>`;
+
+    addTownZoom(main.querySelector('.scene'), () => renderScene(town.state, { petLabels: true, title: describeScene(group.town_name, town.state) }));
 
     // Rename town
     const sheet = document.getElementById('rename-sheet');

@@ -1,7 +1,7 @@
 {
   "name": "My Small Town",
   "short_name": "Small Town",
-  "description": "Share one note of appreciation a day and watch your group's town grow.",
+  "description": "Share notes of appreciation and watch your group's town grow.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

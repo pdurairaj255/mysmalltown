@@ -1,6 +1,6 @@
 # My Small Town
 
-A phone-first web app where a group (a family, roommates, a book club) shares one note of appreciation a day, and every week of appreciation grows the group's shared town.
+A phone-first web app where a group (a family, roommates, a book club) shares notes of appreciation, and every week of appreciation grows the group's shared town.
 
 Plain HTML, CSS and JavaScript with no build step. Data and email sign-in come from [Supabase](https://supabase.com); see **[SETUP.md](SETUP.md)** to connect it. Without it, the app runs in demo mode with data kept on the device.
 
@@ -35,7 +35,8 @@ then visit http://localhost:5173.
 - `js/api.js` — all data access, with a Supabase backend and a demo backend that share one interface.
 - `js/town.js` — the town's growth rules and the drawing of the town scene.
 - `js/avatars.js` — the 40 avatars (10 per age group), drawn as round portraits and as figures in town.
-- `js/surprises.js` — the surprise a 3-day visit streak brings, and how each one is drawn.
+- `js/surprises.js` — the surprise a 3-day visit streak brings, how each one is drawn, and pet names.
+- `js/townview.js` — the full-screen town view with drag and zoom.
 - `js/ui.js` — what every screen does on load: sign-in check, who's using the app, current group, today's visit.
 - `js/app.js` — the bottom tab bar and offline support; `sw.js` is the service worker.
 - `supabase/schema.sql` — tables and privacy rules.

@@ -85,8 +85,8 @@
         <h2 class="eyebrow" style="color: var(--on-ink-muted)">Your week</h2>
         <div class="stack stack-8">
           <div class="row" style="align-items: baseline; gap: 8px">
-            <span class="num big-num">${mine.size}</span>
-            <span style="font-size: 16px; font-weight: 600">of 7 notes of appreciation shared</span>
+            <span class="num big-num">${week.thanks.filter((t) => t.author_id === me.user_id).length}</span>
+            <span style="font-size: 16px; font-weight: 600">notes of appreciation shared</span>
           </div>
           <div class="week-dots week-dots--lg" role="img" aria-label="Shared a note of appreciation on ${plural(mine.size, 'day')} this week">
             ${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => `<div><div class="dot${mine.has(days[i]) ? ' dot--on' : ''}"></div><span>${d}</span></div>`).join('')}
@@ -101,7 +101,7 @@
       <section class="card card--lg" aria-label="The group this week">
         <h2 class="eyebrow">The group this week</h2>
         <div class="tiles tiles--3">
-          <div class="tile bg-coral-tint"><span class="num">${week.thanks.length}</span><span class="lbl">notes shared, out of ${data.members.length * 7} possible</span></div>
+          <div class="tile bg-coral-tint"><span class="num">${week.thanks.length}</span><span class="lbl">notes of appreciation shared</span></div>
           <div class="tile bg-sky-tint"><span class="num">${groupVisits}</span><span class="lbl">visits</span></div>
           <div class="tile bg-violet-tint"><span class="num">${week.surprises.length}</span><span class="lbl">surprise${week.surprises.length === 1 ? '' : 's'}</span></div>
         </div>
@@ -121,7 +121,7 @@
               <span role="cell" style="font-size: 15px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums">${p.visits}</span>
             </div>`).join('')}
         </div>
-        <span class="meta">Each dot is a day with a note of appreciation, up to one a day.</span>
+        <span class="meta">Each dot is a day with at least one note of appreciation.</span>
       </section>
 
       <section class="card card--lg bg-mint-tint" aria-label="Since the start">

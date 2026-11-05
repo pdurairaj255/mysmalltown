@@ -39,6 +39,7 @@
   import { boot, showError, toast } from './js/ui.js';
   import { renderScene, describeScene, sceneState, weekChanges } from './js/town.js';
   import { esc, shortDate } from './js/util.js';
+  import { addTownZoom } from './js/townview.js';
 
   const main = document.getElementById('main');
   const ICON = { build: 'bg-coral', extra: 'bg-mint', visitor: 'bg-violet', pet: 'bg-sun-tint', shop: 'bg-pink', cleanup: 'bg-sky', rare: 'bg-accent' };
@@ -57,6 +58,7 @@
           <span class="item-title">Your first recap arrives after Sunday</span>
           <span class="note">Each week ends on Sunday night. Then you'll see what changed in ${esc(group.town_name)}, and who made it happen.</span>
         </div>`;
+      addTownZoom(main.querySelector('.scene'), () => renderScene(town.state, { petLabels: true, title: describeScene(group.town_name, town.state) }));
     } else {
       let week = done[done.length - 1];
       let view = 'after';
@@ -99,6 +101,9 @@
             </div>
           </section>` : ''}`;
 
+        addTownZoom(document.getElementById('scene'), () => (view === 'before'
+          ? renderScene(before, { petLabels: true, title: describeScene(group.town_name, before) })
+          : renderScene(after, { petLabels: true, since: before, title: describeScene(group.town_name, after) })));
         main.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => { view = b.dataset.view; render(); }));
         main.querySelectorAll('[data-week]').forEach((b) => b.addEventListener('click', () => {
           week = town.weeks[Number(b.dataset.week)];

@@ -9,6 +9,7 @@
 // share, visit) names the person explicitly.
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { NOTES_PER_DAY } from './util.js';
 
 export const isDemo = !SUPABASE_URL || !SUPABASE_ANON_KEY;
 
@@ -28,7 +29,7 @@ function splitMembers(rows, profileOf) {
   return { members, formerMembers };
 }
 
-const ALREADY_SHARED = "You've already shared today's note of appreciation in this group.";
+const DAILY_LIMIT = `You've already shared ${NOTES_PER_DAY} notes of appreciation today in this group.`;
 
 // ---------- Supabase ----------
 
@@ -144,7 +145,7 @@ function supabaseBackend(sb) {
     async shareThanks(row) {
       const { error } = await sb.from('thanks').insert(row);
       if (error) {
-        if (error.code === '23505') throw new Error(ALREADY_SHARED);
+        if (error.code === '23505') throw new Error(DAILY_LIMIT);
         fail(error);
       }
     },
@@ -342,8 +343,8 @@ function demoBackend() {
       if (!controls(db, row.author_id) || !activeMember(db, row.group_id, row.author_id)) {
         throw new Error('You can only share as yourself or one of your kids.');
       }
-      if (db.thanks.some((t) => t.group_id === row.group_id && t.author_id === row.author_id && t.day === row.day)) {
-        throw new Error(ALREADY_SHARED);
+      if (db.thanks.filter((t) => t.group_id === row.group_id && t.author_id === row.author_id && t.day === row.day).length >= NOTES_PER_DAY) {
+        throw new Error(DAILY_LIMIT);
       }
       db.thanks.push({ id: uuid(), ...row, created_at: new Date().toISOString() });
       save(db);

@@ -5,7 +5,7 @@
 // it's random-feeling but identical on every family member's phone, and the
 // same week always replays the same way.
 
-import { possessive } from './util.js';
+import { possessive, listNames } from './util.js';
 
 const INK = '#221A47';
 
@@ -45,15 +45,54 @@ export function rollSurprise(groupId, weekIndex, userId) {
   return { kind, type: types ? types[hash(`${h}:type`) % types.length] : null };
 }
 
+// Picks names for a new pet, the same on every phone and never repeating
+// within a town until the list runs out.
+const PET_NAMES = ['Biscuit', 'Waffles', 'Pickle', 'Maple', 'Clover', 'Peanut', 'Mochi', 'Ziggy', 'Pepper', 'Noodle',
+  'Juniper', 'Olive', 'Tater', 'Sprout', 'Button', 'Cosmo', 'Daisy', 'Fig', 'Gus', 'Hazel',
+  'Jellybean', 'Kiwi', 'Lulu', 'Marble', 'Nacho', 'Otis', 'Poppy', 'Quincy', 'Rusty', 'Sunny',
+  'Truffle', 'Velvet', 'Wally', 'Yuki', 'Bean', 'Cricket', 'Dumpling', 'Fern', 'Gizmo', 'Honey',
+  'Mango', 'Nutmeg', 'Pumpkin', 'Scout', 'Tofu', 'Acorn', 'Basil', 'Clementine', 'Domino', 'Tumble',
+  'Wren', 'Pip', 'Sage', 'Teddy', 'Bubbles', 'Marshmallow', 'Socks', 'Sprinkles', 'Doodle', 'Muffin'];
+
+export function petNames(seed, count, used) {
+  const names = [];
+  let at = hash(`${seed}:name`);
+  while (names.length < count) {
+    let tries = 0;
+    while (used.has(PET_NAMES[at % PET_NAMES.length]) && tries++ < PET_NAMES.length) at++;
+    const name = PET_NAMES[at % PET_NAMES.length];
+    used.add(name);
+    names.push(name);
+    at = hash(`${seed}:name:${names.length}`);
+  }
+  return names;
+}
+
 // ---------- Words ----------
 
-const PET = { dog: 'A puppy', cat: 'A cat', ducks: 'A family of ducks', bunny: 'A bunny', chickens: 'Two chickens' };
+const PET_KIND = { dog: 'puppy', cat: 'cat', ducks: 'duck family', bunny: 'bunny', chickens: 'pair of chickens' };
+
+function petWords({ type, names = [] }) {
+  const [a = 'A pet', b = 'friend'] = names;
+  return {
+    dog: `A puppy named ${a}`,
+    cat: `A cat named ${a}`,
+    ducks: `${a} the duck and family`,
+    bunny: `A bunny named ${a}`,
+    chickens: `Two chickens, ${a} and ${b},`
+  }[type];
+}
+
+// For the Town screen's list: "Nugget and Clover", "pair of chickens".
+export function petSummary({ type, names = [] }) {
+  return { names: names.join(' and '), kind: PET_KIND[type] };
+}
 const SHOP = { grocery: 'grocery stand', icecream: 'ice cream cart', bakery: 'bakery cart', lemonade: 'lemonade stand', flowers: 'flower stall' };
 
-export function surpriseTitle({ kind, type }) {
+export function surpriseTitle({ kind, type, names }) {
   switch (kind) {
     case 'light': return 'A new streetlight came on';
-    case 'pet': return `${PET[type]} moved to town`;
+    case 'pet': return `${petWords({ type, names })} moved to town`;
     case 'shop': return `A pop-up ${SHOP[type]} opened`;
     case 'cleanup': return 'Trash clean-up Sunday';
     default: return type === 'dinosaur' ? 'A friendly dinosaur moved to town!' : 'A superhero joined the town!';
@@ -74,7 +113,8 @@ export function describeSurprises(list) {
   const bits = [];
   const n = (k, one, many) => { const c = count(k); if (c) bits.push(c === 1 ? one : `${c} ${many}`); };
   n('light', 'a streetlight', 'streetlights');
-  n('pet', 'a pet', 'pets');
+  const pets = list.filter((s) => s.kind === 'pet').flatMap((s) => s.names || []);
+  if (pets.length) bits.push(`${pets.length === 1 ? 'a pet named' : 'pets named'} ${listNames(pets)}`);
   n('shop', 'a pop-up shop', 'pop-up shops');
   if (list.some((s) => s.type === 'dinosaur')) bits.push('a friendly dinosaur');
   if (list.some((s) => s.type === 'superhero')) bits.push('a superhero');
@@ -156,9 +196,14 @@ function superhero(x, y, accentFill) {
     + `<polygon points="${x - 3},${y - 1.5} ${x - 1.8},${y + 0.6} ${x - 4.2},${y + 0.6}" ${accentFill}/>`;
 }
 
+// A small picture of a pet, for lists.
+export function petIcon(type) {
+  return `<svg width="34" height="22" viewBox="-11 -15 30 18" aria-hidden="true">${PETS[type](0, 0)}</svg>`;
+}
+
 // Draws every surprise in `list` (oldest first). Returns the SVG parts and,
 // per surprise, a point to put a "new!" sparkle on.
-export function drawSurprises(list, { accentFill, light }) {
+export function drawSurprises(list, { accentFill, light, tag }) {
   const used = { light: 0, pet: 0, shop: 0, dinosaur: 0, superhero: 0 };
   const parts = [];
   const anchors = [];
@@ -169,7 +214,11 @@ export function drawSurprises(list, { accentFill, light }) {
     if (!slot) { anchors.push(null); continue; }
     const [x, y] = slot;
     if (s.kind === 'light') { parts.push(light(x, y)); anchors.push([x + 8, y - 6]); }
-    else if (s.kind === 'pet') { parts.push(PETS[s.type](x, y)); anchors.push([x + 2, y - 16]); }
+    else if (s.kind === 'pet') {
+      parts.push(PETS[s.type](x, y));
+      if (tag && s.names) parts.push(tag(x + 2, y - 27, s.names.join(' & ')));
+      anchors.push([x + 2, y - 16]);
+    }
     else if (s.kind === 'shop') { parts.push(shop(s.type, x, y)); anchors.push([x + 12, y - 24]); }
     else if (s.type === 'dinosaur') { parts.push(dinosaur(x, y, accentFill)); anchors.push([x - 14, y - 30]); }
     else { parts.push(superhero(x, y, accentFill)); anchors.push([x + 18, y - 10]); }

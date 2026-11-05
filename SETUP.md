@@ -16,11 +16,12 @@ Until it's connected, the app runs in **demo mode**: everything stays on the dev
 
 This creates the tables and the privacy rules: people can only see groups they belong to, and the people in those groups, and nobody can do anything until you approve their account.
 
-> **Already ran an earlier version of the schema?** Don't run `schema.sql` again. Instead, run each update you haven't run yet, in order, each in its own new query. Both are safe to run more than once:
+> **Already ran an earlier version of the schema?** Don't run `schema.sql` again. Instead, run each update you haven't run yet, in order, each in its own new query. All are safe to run more than once:
 >
 > 1. [`supabase/migrations/002_approval_and_invite_codes.sql`](supabase/migrations/002_approval_and_invite_codes.sql): avatars, account approval and longer invite codes.
 > 2. [`supabase/migrations/003_delete_my_account.sql`](supabase/migrations/003_delete_my_account.sql): lets people delete their own account without shrinking anyone's town.
 > 3. [`supabase/migrations/004_kid_profiles.sql`](supabase/migrations/004_kid_profiles.sql): kid profiles under a parent's account.
+> 4. [`supabase/migrations/005_three_notes_a_day.sql`](supabase/migrations/005_three_notes_a_day.sql): up to 3 notes of appreciation per day.
 
 ## 3. Set up sign-in emails
 
@@ -244,4 +245,4 @@ This section is for you as the administrator. The app itself keeps what's coming
 - A quiet week still adds a tree or flowers. The town never goes backward.
 - Visiting on 3 or more days in a week brings one surprise, picked at random but the same on everyone's phone: a streetlight (about 35%), a pet such as a puppy, cat, ducks, bunny or chickens (27%), a pop-up grocery stand, ice cream cart, bakery, lemonade stand or flower stall (18%), a trash clean-up Sunday that leaves the town sparkling all next week (15%), or, rarely, a friendly dinosaur or a superhero (5%).
 - Notes of appreciation for people outside the group bring visitors that week.
-- Each person can share one note of appreciation per day in each group.
+- Each person can share up to 3 notes of appreciation per day in each group. Growth doesn't speed up with extra notes: the weekly goal counts how many different people shared, and visitors and who's busy in town count each person once a day.

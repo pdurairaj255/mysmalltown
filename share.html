@@ -46,22 +46,32 @@
 <script src="js/app.js"></script>
 <script type="module">
   import { boot, api, avatar, tintOf, showError } from './js/ui.js';
-  import { esc, longDate } from './js/util.js';
+  import { esc, longDate, NOTES_PER_DAY } from './js/util.js';
 
   const main = document.getElementById('main');
   try {
     const { group, data, me, today } = await boot();
     document.getElementById('subtitle').textContent = `${group.name} · ${longDate(today)}`;
-    const mine = data.thanks.find((t) => t.author_id === me.user_id && t.day === today);
+    const mine = data.thanks.filter((t) => t.author_id === me.user_id && t.day === today);
+    const notesLeft = NOTES_PER_DAY - mine.length;
+    const limitNote = `You can share up to ${NOTES_PER_DAY} notes of appreciation each day.`;
+    const sharedToday = mine.length ? `
+      <section class="stack stack-10" aria-label="Your notes today">
+        <h2 class="form-title">Your notes today</h2>
+        ${mine.map((t) => `
+          <div class="card" style="gap: 4px">
+            <span class="item-title">To ${esc(t.recipient_name)}</span>
+            <p style="font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere">${esc(t.body)}</p>
+          </div>`).join('')}
+      </section>` : '';
 
-    if (mine) {
+    if (notesLeft <= 0) {
       main.innerHTML = `
         <div class="ink-card ink-card--lg">
-          <h2 class="form-title">You've shared today's note of appreciation</h2>
-          <p class="muted" style="font-size: 14px; line-height: 1.5">Your note to <strong style="color: var(--on-ink)">${esc(mine.recipient_name)}</strong>:</p>
-          <p style="font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere">${esc(mine.body)}</p>
+          <h2 class="form-title">You've shared all ${NOTES_PER_DAY} of today's notes</h2>
+          <p class="muted" style="font-size: 14px; line-height: 1.5">Come back tomorrow to share more appreciation.</p>
         </div>
-        <p class="note center">One note of appreciation per person each day. Come back tomorrow for the next one.</p>
+        ${sharedToday}
         <a class="btn" href="index.html">Back to ${esc(group.name)}</a>`;
     } else {
       const others = data.members.filter((m) => m.user_id !== me.user_id);
@@ -96,8 +106,9 @@
 
           <div class="stack stack-10" style="margin-top: auto">
             <button type="submit" class="btn">Share note of appreciation</button>
-            <p class="note center">One note of appreciation per person each day.</p>
+            <p class="note center">${mine.length ? `${notesLeft} more ${notesLeft === 1 ? 'note' : 'notes'} left today.` : limitNote}</p>
           </div>
+          ${sharedToday}
         </form>`;
 
       const form = document.getElementById('main');

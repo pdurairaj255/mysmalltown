@@ -49,7 +49,7 @@ create table public.memberships (
   primary key (group_id, user_id)
 );
 
--- Notes of appreciation: one per person per day in each group.
+-- Notes of appreciation: up to 3 per person per day in each group (limit_daily_notes).
 -- recipient_id is set when the note is for someone in the group; recipient_name
 -- is always set (the person's name at the time, or the outside person's
 -- description). body is null once the author has been deleted.
@@ -61,8 +61,7 @@ create table public.thanks (
   recipient_name text not null check (char_length(recipient_name) between 1 and 80),
   body text check (char_length(body) between 1 and 1000),
   day date not null,
-  created_at timestamptz not null default now(),
-  unique (group_id, author_id, day)
+  created_at timestamptz not null default now()
 );
 
 -- One row per person per day they opened the group.
@@ -75,6 +74,7 @@ create table public.visits (
 
 create index profiles_account_idx on public.profiles (account_id);
 create index thanks_group_idx on public.thanks (group_id, day);
+create index thanks_author_day_idx on public.thanks (group_id, author_id, day);
 create index visits_group_idx on public.visits (group_id, day);
 create index memberships_user_idx on public.memberships (user_id);
 
@@ -329,6 +329,26 @@ grant execute on function public.join_group(text, uuid) to authenticated;
 grant execute on function public.add_kid(text, text, uuid[]) to authenticated;
 grant execute on function public.remove_kid(uuid) to authenticated;
 grant execute on function public.delete_my_account() to authenticated;
+
+-- Each person can share up to 3 notes per day in each group.
+create or replace function public.limit_daily_notes() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  -- Wait for any note this person is saving right now, so two at once can't both slip through.
+  perform pg_advisory_xact_lock(hashtext(new.group_id::text || new.author_id::text || new.day::text));
+  if (select count(*) from thanks
+      where group_id = new.group_id and author_id = new.author_id and day = new.day) >= 3 then
+    raise exception 'You''ve already shared 3 notes of appreciation today in this group.';
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function public.limit_daily_notes() from public, anon, authenticated;
+
+drop trigger if exists limit_daily_notes on public.thanks;
+create trigger limit_daily_notes before insert on public.thanks
+  for each row execute function public.limit_daily_notes();
 
 -- ---------- Row level security ----------
 

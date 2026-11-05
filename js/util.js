@@ -1,6 +1,9 @@
 // Small helpers shared by every module: HTML escaping and calendar days.
 // Days are local-date strings ("2026-10-25"); weeks run Monday to Sunday.
 
+// Each person can share this many notes of appreciation per day in a group.
+export const NOTES_PER_DAY = 3;
+
 export function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
