@@ -159,7 +159,12 @@ Or, without SQL: **Table Editor → profiles**, find the person by name, double-
 
 ## Email alerts for new sign-ups
 
-Get an email whenever someone signs up and is waiting for your approval. It includes their name and email, plus the exact line to run to approve them. The alert is sent through Gmail, using the same kind of app password as your sign-in emails.
+Two automatic emails, both sent through Gmail using the same kind of app password as your sign-in emails:
+
+- **To you:** when someone signs up and is waiting for approval, with their name and email and the exact line to run to approve them.
+- **To them:** when you approve them, however you do it (SQL or Table Editor), with a link to the app. Kid profiles don't get one, since they have no email of their own.
+
+> **Already set up the sign-up alert?** Do these three things: paste the latest [`index.ts`](supabase/functions/notify-admin/index.ts) over the code in **Edge Functions → notify-admin → Code** and click **Deploy**; add the `APP_URL` secret from step 3; and edit the webhook from step 4 so **Update** is ticked too.
 
 ### 1. Make a webhook secret
 
@@ -180,7 +185,7 @@ Copy what it prints. You'll paste it in two places below. Don't share it.
 
 ### 3. Add its secrets
 
-Open **Edge Functions → Secrets** and add these four:
+Open **Edge Functions → Secrets** and add these five:
 
 | Name | Value |
 | --- | --- |
@@ -188,21 +193,22 @@ Open **Edge Functions → Secrets** and add these four:
 | `GMAIL_USER` | the Gmail address that sends them |
 | `GMAIL_APP_PASSWORD` | that account's 16-letter app password (you can reuse the one from your sign-in email setup) |
 | `WEBHOOK_SECRET` | the random string from step 1 |
+| `APP_URL` | the app's web address, for example `https://mysmalltown.pdurairaj.workers.dev` |
 
-### 4. Trigger it on new sign-ups
+### 4. Trigger it when profiles change
 
 1. Open **Database → Webhooks** (in newer dashboards, **Integrations → Database Webhooks**). If asked, click **Enable webhooks**.
 2. Click **Create a new hook** and fill in:
    - **Name:** `notify-admin-new-signup`
    - **Table:** `profiles`
-   - **Events:** only **Insert**
+   - **Events:** **Insert** and **Update**
    - **Type:** **Supabase Edge Functions**, choosing `notify-admin`, method **POST**
    - **HTTP Headers:** add `x-webhook-secret` with the random string from step 1
 3. Click **Create webhook**.
 
 ### 5. Test it
 
-Sign up in the app with an email that's never been used, then pick a name and avatar. Within a minute, an alert should arrive at `ADMIN_EMAIL`. Check spam the first time.
+Sign up in the app with an email that's never been used, then pick a name and avatar. Within a minute, an alert should arrive at `ADMIN_EMAIL`. Then approve that account, and a "You're approved" email should arrive at the address you signed up with. Check spam the first time.
 
 If nothing arrives, open **Edge Functions → notify-admin → Logs**:
 
