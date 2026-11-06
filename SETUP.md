@@ -26,7 +26,7 @@ This creates the tables and the privacy rules: people can only see groups they b
 ## 3. Set up sign-in emails
 
 1. Open **Authentication → Sign In / Providers** and make sure **Email** is enabled. Turn **Confirm email** on.
-2. Open **Authentication → Emails → Templates → Magic Link**, and replace the message body with:
+2. Open **Authentication → Emails → Templates**. Someone signing in for the very first time gets the **Confirm signup** email, and returning people get **Magic Link**. In **both** templates, replace the message body with:
 
    ```html
    <h2>Your My Small Town sign-in code</h2>
@@ -111,7 +111,7 @@ Your data lives in Supabase, so nothing is lost in the move. Do these steps once
 
 1. Send your family the new address. Each person signs in once with an emailed code, because sign-ins are saved per address.
 2. Anyone who installed the app on their phone should delete the old icon and add the new address to their home screen.
-3. In Supabase, remove the old `netlify.app` address from **Redirect URLs**.
+3. In Supabase, go to **Authentication → URL Configuration**. Make sure **Site URL** is the new address, and remove the old `netlify.app` address from **Redirect URLs**. Until you do, sign-in emails can still link to the old site.
 4. In Netlify, delete the site: **Site configuration → General → Danger zone → Delete this site**.
 5. In GitHub, remove Netlify's access: **Settings → Applications → Installed GitHub Apps → Netlify → Configure → Uninstall**.
 
