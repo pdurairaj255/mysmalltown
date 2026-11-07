@@ -55,6 +55,13 @@ function supabaseBackend(sb) {
       if (error) fail(error);
     },
 
+    // Finishes sign-in from the link in the email. The link only opens the app;
+    // this uses up the one-time sign-in, so email scanners opening it do no harm.
+    async verifyLink(tokenHash) {
+      const { error } = await sb.auth.verifyOtp({ token_hash: tokenHash, type: 'email' });
+      if (error) fail(error);
+    },
+
     async signOut() {
       await sb.auth.signOut();
     },
@@ -232,6 +239,8 @@ function demoBackend() {
     },
 
     async sendCode() { /* demo mode signs in without an email */ },
+
+    async verifyLink() { throw new Error('Demo mode has no email links.'); },
 
     async verifyCode(email) {
       const db = load();

@@ -30,12 +30,13 @@ This creates the tables and the privacy rules: people can only see groups they b
 2. Open **Authentication → Emails → Templates**. Someone signing in for the very first time gets the **Confirm signup** email, and returning people get **Magic Link**. In **both** templates, replace the message body with:
 
    ```html
-   <h2>Your My Small Town sign-in code</h2>
-   <p>Enter this code in the app: <strong style="font-size: 24px; letter-spacing: 4px">{{ .Token }}</strong></p>
-   <p>Keep the app open while you get this email, then type the code there. It works once and expires in about an hour.</p>
+   <h2>Sign in to My Small Town</h2>
+   <p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}" style="display: inline-block; background: #FFD23F; color: #221A47; font-weight: 700; padding: 12px 20px; border-radius: 12px; text-decoration: none">Sign in to My Small Town</a></p>
+   <p>Or type this code in the app: <strong style="font-size: 24px; letter-spacing: 4px">{{ .Token }}</strong></p>
+   <p>Use the button or the code, not both. It works once and expires in about an hour.</p>
    ```
 
-   These emails deliberately have a code and no link. Links open in the browser rather than an installed app, and some email services test links automatically, which uses up the one-time sign-in before the person gets to it. If the code stops working, that's usually why.
+   The button opens the app, where one more tap finishes signing in. That extra tap matters: some email services test links automatically, and a standard Supabase link (`{{ .ConfirmationURL }}`) would be used up before the person got to it. People who installed the app on their phone should type the code, because email buttons usually open the browser instead of the installed app.
 
 3. Open **Authentication → URL Configuration**:
    - **Site URL**: the app's address, for example `https://mysmalltown.pages.dev` (see step 4d)

@@ -32,7 +32,7 @@
     <div class="hero"><img src="icons/icon-512.png" alt=""></div>
 
     <form id="email-step" class="stack stack-14" novalidate>
-      <p id="link-notice" role="alert" hidden style="margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--sun-tint); font-size: 14px; font-weight: 600; line-height: 1.45">That sign-in link has expired or was already used. No problem: enter your email below for a new code, then type the code into this page.</p>
+      <p id="link-notice" role="alert" hidden style="margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--sun-tint); font-size: 14px; font-weight: 600; line-height: 1.45">That sign-in link has expired or was already used. No problem: enter your email below and we'll send a new one.</p>
       <p class="body-text" style="color: var(--ink-2)">Share notes of appreciation with the people you love, and watch your town grow together.</p>
       <div class="field">
         <label class="form-title" for="email">Your email</label>
@@ -43,8 +43,14 @@
       <p class="note center">No password needed. We'll email you a code each time you sign in on a new device.</p>
     </form>
 
+    <form id="link-step" class="stack stack-14" novalidate hidden>
+      <p class="body-text" style="color: var(--ink-2)">One last tap and you're in.</p>
+      <p class="form-error" role="alert" hidden></p>
+      <button type="submit" class="btn">Finish signing in</button>
+    </form>
+
     <form id="code-step" class="stack stack-14" novalidate hidden>
-      <p class="body-text" style="color: var(--ink-2)">We sent a code to <strong id="sent-to"></strong>. Open that email, then come back to this page and type the code here.</p>
+      <p class="body-text" style="color: var(--ink-2)">We sent a code to <strong id="sent-to"></strong>. Open that email and tap the sign-in button, or type the code here.</p>
       <div class="field">
         <label class="form-title" for="code">Sign-in code</label>
         <input class="input" id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" required style="letter-spacing: 0.2em">
@@ -97,7 +103,7 @@
 
   const params = new URLSearchParams(location.search);
   const next = safeNext(params.get('next'));
-  const steps = { email: document.getElementById('email-step'), code: document.getElementById('code-step'), profile: document.getElementById('profile-step'), waiting: document.getElementById('waiting-step') };
+  const steps = { email: document.getElementById('email-step'), link: document.getElementById('link-step'), code: document.getElementById('code-step'), profile: document.getElementById('profile-step'), waiting: document.getElementById('waiting-step') };
   const title = document.getElementById('title');
   if (params.get('deleted')) steps.email.querySelector('p').textContent = 'Your account has been deleted. Thanks for being part of the town.';
   let email = '';
@@ -125,7 +131,7 @@
 
   function show(step) {
     Object.entries(steps).forEach(([k, el]) => { el.hidden = k !== step; });
-    title.textContent = { email: 'Welcome', code: 'Check your email', profile: 'About you', waiting: 'Almost there' }[step];
+    title.textContent = { email: 'Welcome', link: 'Welcome back', code: 'Check your email', profile: 'About you', waiting: 'Almost there' }[step];
     steps[step].querySelector('input, button')?.focus();
   }
   function setError(form, message) {
@@ -245,17 +251,49 @@
     location.replace('signin.html');
   });
 
-  // Already signed in (or arriving from the email link)? Skip ahead. Otherwise
+  function linkDidNotWork() {
+    // A failed link means the code in that email was used up too, so start fresh.
+    pending.clear();
+    document.getElementById('link-notice').hidden = false;
+    show('email');
+  }
+
+  // The email's button brings people here with a one-time token in the address.
+  const tokenHash = params.get('token_hash');
+  function forgetToken() {
+    const clean = new URLSearchParams(location.search);
+    clean.delete('token_hash');
+    const query = clean.toString();
+    history.replaceState(null, '', location.pathname + (query ? `?${query}` : ''));
+  }
+
+  steps.link.addEventListener('submit', (e) => {
+    e.preventDefault();
+    busy(steps.link, async () => {
+      try {
+        await api.verifyLink(tokenHash);
+      } catch {
+        // Tapped the button twice, or used the code already? If they're signed in, carry on.
+        forgetToken();
+        if (await api.getUser()) await afterSignIn();
+        else linkDidNotWork();
+        return;
+      }
+      forgetToken();
+      await afterSignIn();
+    });
+  });
+
+  // Already signed in (or arriving from an email link)? Skip ahead. Otherwise
   // pick up where they left off, and say so if an email link didn't work.
   try {
-    if (await api.getUser()) {
+    if (tokenHash) {
+      show('link');
+    } else if (await api.getUser()) {
       await afterSignIn();
     } else if (window.linkFailed) {
-      // A failed link usually means the code was used up too, so start fresh.
-      pending.clear();
       history.replaceState(null, '', location.pathname + location.search);
-      document.getElementById('link-notice').hidden = false;
-      show('email');
+      linkDidNotWork();
     } else if (pending.get() && !isDemo) {
       showCodeStep(pending.get());
     } else {
