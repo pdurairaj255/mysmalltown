@@ -57,6 +57,7 @@
       <legend style="font-size: 15px; font-weight: 700; padding: 0; margin-bottom: 8px">Add them to</legend>
       <div class="stack stack-10" id="kid-groups"></div>
     </fieldset>
+    <p class="note" id="kid-in-groups" style="margin: 0" hidden></p>
     <p class="form-error" role="alert" hidden></p>
     <div class="row" style="gap: 10px">
       <button type="button" class="btn btn--md btn--outline" data-close>Cancel</button>
@@ -137,7 +138,15 @@
     document.getElementById('kid-avatars').innerHTML = avatarPicker('kid-avatar');
     let editing = null;
 
-    function openKidSheet(kid) {
+    // A kid can be added to any of the grown-up's groups they aren't in yet.
+    let addable = myGroups;
+    async function openKidSheet(kid) {
+      const kidGroups = kid ? await api.listMyGroups(kid.id) : [];
+      const inGroup = new Set(kidGroups.map((g) => g.id));
+      addable = myGroups.filter((g) => !inGroup.has(g.id));
+      const already = document.getElementById('kid-in-groups');
+      already.textContent = kidGroups.length ? `Already in: ${kidGroups.map((g) => g.name).join(', ')}` : '';
+      already.hidden = !kidGroups.length;
       editing = kid;
       kidForm.reset();
       kidError.hidden = true;
@@ -149,13 +158,14 @@
         if (radio) radio.checked = true;
       }
       const wrap = document.getElementById('kid-groups-wrap');
-      wrap.hidden = !!kid || !myGroups.length;
-      document.getElementById('kid-groups').innerHTML = myGroups.map((g, i) => `
-        <div class="checkbox-row"><input type="checkbox" id="g-${i}" value="${esc(g.id)}" checked><label for="g-${i}">${esc(g.name)}</label></div>`).join('');
+      wrap.hidden = !addable.length;
+      document.getElementById('kid-groups').innerHTML = addable.map((g, i) => `
+        <div class="checkbox-row"><input type="checkbox" id="g-${i}" value="${esc(g.id)}"${kid ? '' : ' checked'}><label for="g-${i}">${esc(g.name)}</label></div>`).join('');
       kidSheet.showModal();
     }
-    document.getElementById('add-kid').addEventListener('click', () => openKidSheet(null));
-    main.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => openKidSheet(kids.find((k) => k.id === b.dataset.edit))));
+    const tryOpen = (kid) => openKidSheet(kid).catch((ex) => toast(ex.message));
+    document.getElementById('add-kid').addEventListener('click', () => tryOpen(null));
+    main.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => tryOpen(kids.find((k) => k.id === b.dataset.edit))));
 
     kidForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -169,6 +179,8 @@
       try {
         if (editing) {
           await api.updatePerson(editing.id, { display_name, avatar: avatarId });
+          const chosen = [...kidForm.querySelectorAll('#kid-groups input:checked')].map((c) => c.value);
+          for (const g of addable.filter((x) => chosen.includes(x.id))) await api.joinGroup(g.invite_code, editing.id);
           toast('Saved');
         } else {
           const groupIds = [...kidForm.querySelectorAll('#kid-groups input:checked')].map((c) => c.value);

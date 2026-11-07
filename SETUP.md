@@ -22,6 +22,7 @@ This creates the tables and the privacy rules: people can only see groups they b
 > 2. [`supabase/migrations/003_delete_my_account.sql`](supabase/migrations/003_delete_my_account.sql): lets people delete their own account without shrinking anyone's town.
 > 3. [`supabase/migrations/004_kid_profiles.sql`](supabase/migrations/004_kid_profiles.sql): kid profiles under a parent's account.
 > 4. [`supabase/migrations/005_three_notes_a_day.sql`](supabase/migrations/005_three_notes_a_day.sql): up to 3 notes of appreciation per day.
+> 5. [`supabase/migrations/006_delete_town.sql`](supabase/migrations/006_delete_town.sql): lets a group's owner delete its town.
 
 ## 3. Set up sign-in emails
 
@@ -127,6 +128,7 @@ Your data lives in Supabase, so nothing is lost in the move. Do these steps once
 
 Kids don't need an email. A parent adds them from **Groups → Kid profiles** (or **Who's using the app?**): name, avatar, and which of the parent's groups to join. Each kid has their own daily note of appreciation, visits, surprises and place in town.
 
+- **More groups later:** to add a kid to another of your groups, go to **Who's using the app?**, tap **Edit** next to them, and tick the group. A kid in several groups switches between them on the **Groups** tab, the same as anyone else.
 - **Sharing a device:** when an account has kids, the app asks **"Who's using the app?"** each time it's opened. Everyone taps their own townsperson, with no sign-in codes. The **Using as … · Switch** chip on Home switches at any time.
 - **Approval:** kids follow their parent's approval, so you approve the parent once.
 - **Removing a kid:** the parent taps **Remove** next to them. Like deleting an account, the town stays exactly as built, and only the kid's name, avatar and note text are erased. Deleting a parent's account removes their kids the same way.
@@ -215,6 +217,18 @@ If nothing arrives, open **Edge Functions → notify-admin → Logs**:
 - "Missing secret": one of the secrets in step 3 is misspelled.
 - "Forbidden": the webhook's header doesn't match `WEBHOOK_SECRET`.
 - An authentication error from Gmail: the app password is wrong.
+
+## Deleting a town
+
+The grown-up who owns a group can delete its town: open **Groups**, make sure that group is selected and you're using the app as yourself, tap **Delete this town**, and type the town's name to confirm. The owner is whoever started the group, or the person it passed to if they left.
+
+This permanently deletes the town, its invite code, and all its notes and visits for everyone in the group. People keep their accounts and any other towns. It can't be undone, and the free Supabase plan has no automatic backups.
+
+As administrator, you can delete any town in the SQL Editor, using its invite code:
+
+```sql
+delete from public.groups where invite_code = 'REYES-7KQ3-XM9P';
+```
 
 ## Deleting accounts
 

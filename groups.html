@@ -41,6 +41,26 @@
   <nav class="tabbar" data-current="groups"></nav>
 </div>
 
+<dialog class="sheet" id="delete-town-sheet" aria-labelledby="delete-town-title">
+  <form novalidate>
+    <h2 class="form-title" id="delete-town-title">Delete <span data-town-name></span>?</h2>
+    <ul class="stack stack-8" style="font-size: 14px; line-height: 1.45; color: var(--ink-2); padding-left: 18px; list-style: disc">
+      <li>The town, its invite code, and all its notes of appreciation and visits are deleted for everyone in the group.</li>
+      <li>Everyone keeps their account and any other towns they're in.</li>
+    </ul>
+    <p class="item-title" style="margin: 0">This can't be undone.</p>
+    <div class="field">
+      <label for="delete-town-confirm" style="font-size: 15px; font-weight: 700">Type <span data-town-name></span> to confirm</label>
+      <input class="input input--sm" id="delete-town-confirm" type="text" autocomplete="off">
+    </div>
+    <p class="form-error" role="alert" hidden></p>
+    <div class="row" style="gap: 10px">
+      <button type="button" class="btn btn--md btn--outline" id="delete-town-cancel">Keep this town</button>
+      <button type="submit" class="btn btn--md btn--danger" id="delete-town-go" disabled>Delete</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog class="sheet" id="delete-sheet" aria-labelledby="delete-title">
   <form novalidate>
     <h2 class="form-title" id="delete-title">Delete your account?</h2>
@@ -80,7 +100,9 @@
     </svg>`;
 
   try {
-    const { group, groups, profile, user, person, hasKids } = await boot({ needGroup: false });
+    const { group, groups, profile, user, person, people, hasKids } = await boot({ needGroup: false });
+    // Only the grown-up who owns the group, so a kid on a shared device can't delete a town.
+    const canDeleteTown = group && person.id === user.id && people.some((p) => p.id === group.created_by);
     const today = dayKey();
     const joinCode = new URLSearchParams(location.search).get('join') || '';
     const inviteUrl = group ? new URL(`groups.html?join=${encodeURIComponent(group.invite_code)}`, location.href).href : '';
@@ -96,6 +118,7 @@
               <span class="item-sub">${esc(g.town_name)} · Week ${Math.floor(daysBetween(mondayOf(dayKey(g.created_at)), today) / 7) + 1}</span>
             </span>
           </button>`).join('')}
+        ${person.is_kid && groups.length === 1 ? `<p class="note" style="margin: 0">To be in more groups, ask a grown-up to add you: <a href="who.html">Who's using the app?</a> → Edit next to your name.</p>` : ''}
       </section>` : ''}
 
       ${group ? `
@@ -146,7 +169,14 @@
           <button type="button" class="link-btn" id="sign-out">Sign out</button>
           <button type="button" class="link-btn" id="delete-account" style="color: #B3261E">Delete my account</button>
         </div>
-      </section>`;
+      </section>
+
+      ${canDeleteTown ? `
+      <section class="card" aria-label="Delete this town">
+        <span class="item-title">Delete ${esc(group.town_name)}</span>
+        <span class="note">You own this group, so you can delete its town for everyone.</span>
+        <button type="button" class="link-btn" id="delete-town" style="align-self: flex-start; color: #B3261E">Delete this town</button>
+      </section>` : ''}`;
 
     main.querySelectorAll('.group').forEach((btn) => btn.addEventListener('click', () => {
       rememberGroup(btn.dataset.id);
@@ -184,6 +214,37 @@
       await api.signOut();
       location.href = 'signin.html';
     });
+
+    // Delete this town: confirmed by typing the town's name.
+    if (canDeleteTown) {
+      const townSheet = document.getElementById('delete-town-sheet');
+      const townInput = document.getElementById('delete-town-confirm');
+      const townGo = document.getElementById('delete-town-go');
+      const townError = townSheet.querySelector('.form-error');
+      const matches = () => townInput.value.trim().toLowerCase() === group.town_name.trim().toLowerCase();
+      document.querySelectorAll('[data-town-name]').forEach((el) => { el.textContent = group.town_name; });
+      document.getElementById('delete-town').addEventListener('click', () => {
+        townInput.value = '';
+        townGo.disabled = true;
+        townError.hidden = true;
+        townSheet.showModal();
+      });
+      document.getElementById('delete-town-cancel').addEventListener('click', () => townSheet.close());
+      townInput.addEventListener('input', () => { townGo.disabled = !matches(); });
+      townSheet.querySelector('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!matches()) return;
+        townGo.disabled = true;
+        try {
+          await api.deleteGroup(group.id);
+          location.replace('index.html');
+        } catch (ex) {
+          townError.textContent = ex.message;
+          townError.hidden = false;
+          townGo.disabled = false;
+        }
+      });
+    }
 
     // Delete my account: confirmed by typing DELETE, then done in one step by
     // the database (see delete_my_account in supabase/schema.sql).

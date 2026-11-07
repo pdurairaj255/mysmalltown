@@ -126,6 +126,12 @@ function supabaseBackend(sb) {
       if (error) fail(error);
     },
 
+    // Deletes the group and its town for everyone. See delete_group() in supabase/schema.sql.
+    async deleteGroup(groupId) {
+      const { error } = await sb.rpc('delete_group', { p_group: groupId });
+      if (error) fail(error);
+    },
+
     async loadGroup(groupId) {
       const [g, m, t, v] = await Promise.all([
         sb.from('groups').select('id, name, town_name, accent, invite_code, created_by, created_at').eq('id', groupId).single(),
@@ -325,6 +331,15 @@ function demoBackend() {
     async updateGroup(groupId, fields) {
       const db = load();
       Object.assign(db.groups.find((g) => g.id === groupId), fields);
+      save(db);
+    },
+
+    async deleteGroup(groupId) {
+      const db = load();
+      const group = db.groups.find((g) => g.id === groupId);
+      if (!group || !controls(db, group.created_by)) throw new Error('Only the person who owns this group can delete its town.');
+      db.groups = db.groups.filter((g) => g.id !== groupId);
+      for (const k of ['memberships', 'thanks', 'visits']) db[k] = db[k].filter((r) => r.group_id !== groupId);
       save(db);
     },
 
