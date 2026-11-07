@@ -32,10 +32,10 @@ This creates the tables and the privacy rules: people can only see groups they b
    ```html
    <h2>Your My Small Town sign-in code</h2>
    <p>Enter this code in the app: <strong style="font-size: 24px; letter-spacing: 4px">{{ .Token }}</strong></p>
-   <p>Or <a href="{{ .ConfirmationURL }}">tap here to sign in</a> on this device.</p>
+   <p>Keep the app open while you get this email, then type the code there. It works once and expires in about an hour.</p>
    ```
 
-   The code matters for people who install the app on their phone: links in emails open in the browser, not in the installed app, so they type the code instead.
+   These emails deliberately have a code and no link. Links open in the browser rather than an installed app, and some email services test links automatically, which uses up the one-time sign-in before the person gets to it. If the code stops working, that's usually why.
 
 3. Open **Authentication → URL Configuration**:
    - **Site URL**: the app's address, for example `https://mysmalltown.pages.dev` (see step 4d)

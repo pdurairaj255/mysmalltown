@@ -32,6 +32,7 @@
     <div class="hero"><img src="icons/icon-512.png" alt=""></div>
 
     <form id="email-step" class="stack stack-14" novalidate>
+      <p id="link-notice" role="alert" hidden style="margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--sun-tint); font-size: 14px; font-weight: 600; line-height: 1.45">That sign-in link has expired or was already used. No problem: enter your email below for a new code, then type the code into this page.</p>
       <p class="body-text" style="color: var(--ink-2)">Share notes of appreciation with the people you love, and watch your town grow together.</p>
       <div class="field">
         <label class="form-title" for="email">Your email</label>
@@ -43,14 +44,14 @@
     </form>
 
     <form id="code-step" class="stack stack-14" novalidate hidden>
-      <p class="body-text" style="color: var(--ink-2)">We sent a code to <strong id="sent-to"></strong>. Enter it below, or tap the link in the email.</p>
+      <p class="body-text" style="color: var(--ink-2)">We sent a code to <strong id="sent-to"></strong>. Open that email, then come back to this page and type the code here.</p>
       <div class="field">
         <label class="form-title" for="code">Sign-in code</label>
         <input class="input" id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" required style="letter-spacing: 0.2em">
       </div>
       <p class="form-error" role="alert" hidden></p>
       <button type="submit" class="btn">Sign in</button>
-      <button type="button" class="link-btn" id="use-other">Use a different email</button>
+      <button type="button" class="link-btn" id="use-other">Send a new code or use a different email</button>
     </form>
 
     <form id="profile-step" class="stack stack-14" novalidate hidden>
@@ -87,6 +88,10 @@
   </main>
 </div>
 <script src="js/app.js"></script>
+<script>
+  // Read now: the sign-in library may tidy the address once it loads.
+  window.linkFailed = new URLSearchParams(location.hash.slice(1)).has('error');
+</script>
 <script type="module">
   import { api, isDemo, avatarPicker, portrait, safeNext } from './js/ui.js';
 
@@ -96,6 +101,27 @@
   const title = document.getElementById('title');
   if (params.get('deleted')) steps.email.querySelector('p').textContent = 'Your account has been deleted. Thanks for being part of the town.';
   let email = '';
+
+  // Remember who's waiting on a code, so coming back from the email app still
+  // lands on the code box, even if the phone reloaded this page meanwhile.
+  const PENDING = 'mst.pendingEmail';
+  const CODE_LIFETIME = 60 * 60 * 1000;
+  const pending = {
+    get() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(PENDING));
+        return saved && Date.now() - saved.at < CODE_LIFETIME ? saved.email : null;
+      } catch { return null; }
+    },
+    set(value) { try { localStorage.setItem(PENDING, JSON.stringify({ email: value, at: Date.now() })); } catch { /* private mode */ } },
+    clear() { try { localStorage.removeItem(PENDING); } catch { /* private mode */ } }
+  };
+
+  function showCodeStep(address) {
+    email = address;
+    document.getElementById('sent-to').textContent = address;
+    show('code');
+  }
 
   function show(step) {
     Object.entries(steps).forEach(([k, el]) => { el.hidden = k !== step; });
@@ -125,6 +151,7 @@
   }
 
   async function afterSignIn() {
+    pending.clear();
     const user = await api.getUser();
     const profile = await api.getProfile(user.id);
     if (profile && params.get('step') !== 'profile') {
@@ -156,8 +183,8 @@
         return;
       }
       await api.sendCode(email, new URL(`signin.html?next=${encodeURIComponent(next)}`, location.href).href);
-      document.getElementById('sent-to').textContent = email;
-      show('code');
+      pending.set(email);
+      showCodeStep(email);
     });
   });
 
@@ -166,12 +193,22 @@
     busy(steps.code, async () => {
       const code = document.getElementById('code').value.replace(/\s/g, '');
       if (!code) throw new Error('Enter the code from the email.');
-      await api.verifyCode(email, code);
+      try {
+        await api.verifyCode(email, code);
+      } catch (e) {
+        if (/expired|invalid/i.test(e.message)) {
+          throw new Error("That code didn't work. It may be mistyped, expired, or replaced by a newer email. Check it, or send a new code below.");
+        }
+        throw e;
+      }
       await afterSignIn();
     });
   });
 
-  document.getElementById('use-other').addEventListener('click', () => show('email'));
+  document.getElementById('use-other').addEventListener('click', () => {
+    pending.clear();
+    show('email');
+  });
 
   steps.profile.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -208,9 +245,26 @@
     location.replace('signin.html');
   });
 
-  // Already signed in (or arriving from the email link)? Skip ahead.
-  if (await api.getUser()) await afterSignIn();
-  else show('email');
+  // Already signed in (or arriving from the email link)? Skip ahead. Otherwise
+  // pick up where they left off, and say so if an email link didn't work.
+  try {
+    if (await api.getUser()) {
+      await afterSignIn();
+    } else if (window.linkFailed) {
+      // A failed link usually means the code was used up too, so start fresh.
+      pending.clear();
+      history.replaceState(null, '', location.pathname + location.search);
+      document.getElementById('link-notice').hidden = false;
+      show('email');
+    } else if (pending.get() && !isDemo) {
+      showCodeStep(pending.get());
+    } else {
+      show('email');
+    }
+  } catch (e) {
+    show('email');
+    setError(steps.email, e.message);
+  }
 </script>
 </body>
 </html>
