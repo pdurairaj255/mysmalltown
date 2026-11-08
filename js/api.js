@@ -30,6 +30,9 @@ function splitMembers(rows, profileOf) {
 }
 
 const DAILY_LIMIT = `You've already shared ${NOTES_PER_DAY} notes of appreciation today in this group.`;
+const NEEDS_007 = 'This needs a database update first: run supabase/migrations/007_note_deletion_and_emails.sql in Supabase (see SETUP.md).';
+// True when a query failed only because the database is missing a newer column.
+const missingColumn = (error) => !!error && (error.code === '42703' || error.code === 'PGRST204' || /column .* does not exist|Could not find the .* column/i.test(error.message || ''));
 
 // ---------- Supabase ----------
 
@@ -68,7 +71,9 @@ function supabaseBackend(sb) {
 
     // The signed-in grown-up's own profile.
     async getProfile(userId) {
-      const { data, error } = await sb.from('profiles').select('id, display_name, avatar, approved, notify').eq('id', userId).maybeSingle();
+      let { data, error } = await sb.from('profiles').select('id, display_name, avatar, approved, notify').eq('id', userId).maybeSingle();
+      // Before update 007 the notify column doesn't exist yet: carry on without it.
+      if (missingColumn(error)) ({ data, error } = await sb.from('profiles').select('id, display_name, avatar, approved').eq('id', userId).maybeSingle());
       if (error) fail(error);
       return data;
     },
@@ -81,6 +86,7 @@ function supabaseBackend(sb) {
     // 'instant', 'daily', 'weekly' or 'off'. See supabase/functions/notify-notes.
     async saveNotify(userId, notify) {
       const { error } = await sb.from('profiles').update({ notify }).eq('id', userId);
+      if (missingColumn(error)) throw new Error(NEEDS_007);
       if (error) fail(error);
     },
 
@@ -146,12 +152,15 @@ function supabaseBackend(sb) {
     },
 
     async loadGroup(groupId) {
-      const [g, m, t, v] = await Promise.all([
+      const notes = (cols) => sb.from('thanks').select(cols).eq('group_id', groupId).order('created_at');
+      let [g, m, t, v] = await Promise.all([
         sb.from('groups').select('id, name, town_name, accent, invite_code, created_by, created_at').eq('id', groupId).single(),
         sb.from('memberships').select('user_id, joined_at, left_at').eq('group_id', groupId),
-        sb.from('thanks').select('id, author_id, recipient_id, recipient_name, body, day, created_at, deleted_at').eq('group_id', groupId).order('created_at'),
+        notes('id, author_id, recipient_id, recipient_name, body, day, created_at, deleted_at'),
         sb.from('visits').select('user_id, day').eq('group_id', groupId)
       ]);
+      // Before update 007 the deleted_at column doesn't exist yet: carry on without it.
+      if (missingColumn(t.error)) t = await notes('id, author_id, recipient_id, recipient_name, body, day, created_at');
       for (const r of [g, m, t, v]) if (r.error) fail(r.error);
       const ids = m.data.filter((r) => !r.left_at).map((r) => r.user_id);
       const p = await sb.from('profiles').select('id, display_name, avatar, is_kid').in('id', ids);
@@ -172,6 +181,7 @@ function supabaseBackend(sb) {
     // Erases a note's words for everyone; it still counts toward the town. See delete_note().
     async deleteNote(noteId) {
       const { error } = await sb.rpc('delete_note', { p_note: noteId });
+      if (error && (error.code === 'PGRST202' || /delete_note/.test(error.message || ''))) throw new Error(NEEDS_007);
       if (error) fail(error);
     },
 
