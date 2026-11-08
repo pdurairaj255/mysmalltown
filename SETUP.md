@@ -23,6 +23,7 @@ This creates the tables and the privacy rules: people can only see groups they b
 > 3. [`supabase/migrations/004_kid_profiles.sql`](supabase/migrations/004_kid_profiles.sql): kid profiles under a parent's account.
 > 4. [`supabase/migrations/005_three_notes_a_day.sql`](supabase/migrations/005_three_notes_a_day.sql): up to 3 notes of appreciation per day.
 > 5. [`supabase/migrations/006_delete_town.sql`](supabase/migrations/006_delete_town.sql): lets a group's owner delete its town.
+> 6. [`supabase/migrations/007_note_deletion_and_emails.sql`](supabase/migrations/007_note_deletion_and_emails.sql): deleting your own notes, and email choices for new notes.
 
 ## 3. Set up sign-in emails
 
@@ -218,6 +219,52 @@ If nothing arrives, open **Edge Functions → notify-admin → Logs**:
 - "Missing secret": one of the secrets in step 3 is misspelled.
 - "Forbidden": the webhook's header doesn't match `WEBHOOK_SECRET`.
 - An authentication error from Gmail: the app password is wrong.
+
+## Emails about new notes
+
+Each person picks in **Groups → Settings**: an email as each note is shared, a daily or weekly summary, or none (the default). Notes they or their kids wrote aren't included, and deleted notes never are. Kid profiles have no email; their parent hears about notes in the kids' groups.
+
+It uses the same Gmail sending and secrets as the sign-up alerts above, so set those up first.
+
+1. **Add the code:** **Edge Functions → Deploy a new function → Via Editor**, name it exactly `notify-notes`, replace the sample code with the whole contents of [`supabase/functions/notify-notes/index.ts`](supabase/functions/notify-notes/index.ts), and click **Deploy**. Then open its **Details** and turn **off** **Enforce JWT verification**.
+2. **Send instant emails:** **Database → Webhooks** (or **Integrations → Database Webhooks**) → **Create a new hook**:
+   - **Name:** `notify-notes-new-note`
+   - **Table:** `thanks`
+   - **Events:** only **Insert**
+   - **Type:** **Supabase Edge Functions**, choosing `notify-notes`, method **POST**
+   - **HTTP Headers:** `x-webhook-secret` with the same random string as your `WEBHOOK_SECRET` secret
+3. **Schedule the summaries:** in **SQL Editor → New query**, paste this, replace `PASTE-YOUR-WEBHOOK-SECRET` with that same random string, and click **Run**:
+
+   ```sql
+   create extension if not exists pg_cron;
+
+   -- Daily at 02:00 UTC (6 pm Pacific in winter, 7 pm in summer).
+   select cron.schedule('notes-daily-summary', '0 2 * * *', $$
+     select net.http_post(
+       url := 'https://kbxuaakuslnpnlskxtso.supabase.co/functions/v1/notify-notes',
+       headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', 'PASTE-YOUR-WEBHOOK-SECRET'),
+       body := '{"type": "DIGEST", "period": "daily"}'::jsonb
+     );
+   $$);
+
+   -- Mondays at 02:00 UTC, which is Sunday evening in the US.
+   select cron.schedule('notes-weekly-summary', '0 2 * * 1', $$
+     select net.http_post(
+       url := 'https://kbxuaakuslnpnlskxtso.supabase.co/functions/v1/notify-notes',
+       headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', 'PASTE-YOUR-WEBHOOK-SECRET'),
+       body := '{"type": "DIGEST", "period": "weekly"}'::jsonb
+     );
+   $$);
+   ```
+
+   Running it again with the same names updates the schedule. To change the times, edit the `'0 2 * * *'` parts (minute, hour in UTC, day of month, month, day of week).
+4. **Test it:** set your own choice to **As they're shared**, then have someone else in your group share a note. If nothing arrives, run the diagnostic query from the sign-up alerts section: the newest `call` row shows what happened.
+
+Gmail allows about 500 emails a day, plenty for a family. A note shared to a group of 10 with everyone on "as they're shared" sends 9 emails.
+
+## Deleting notes
+
+Anyone can delete their own notes: tap **Delete** under it on Home, or see all of them in **Groups → Settings**. Deleting erases the note's words for everyone. It still counts toward the town's progress and toward that day's limit of 3, so deleting never shrinks a town or frees up an extra note.
 
 ## Deleting a town
 

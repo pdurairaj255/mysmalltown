@@ -58,7 +58,7 @@
     const sharedToday = mine.length ? `
       <section class="stack stack-10" aria-label="Your notes today">
         <h2 class="form-title">Your notes today</h2>
-        ${mine.map((t) => `
+        ${mine.filter((t) => !t.deleted_at).map((t) => `
           <div class="card" style="gap: 4px">
             <span class="item-title">To ${esc(t.recipient_name)}</span>
             <p style="font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere">${esc(t.body)}</p>

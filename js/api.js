@@ -68,13 +68,19 @@ function supabaseBackend(sb) {
 
     // The signed-in grown-up's own profile.
     async getProfile(userId) {
-      const { data, error } = await sb.from('profiles').select('id, display_name, avatar, approved').eq('id', userId).maybeSingle();
+      const { data, error } = await sb.from('profiles').select('id, display_name, avatar, approved, notify').eq('id', userId).maybeSingle();
       if (error) fail(error);
       return data;
     },
 
     async saveProfile(userId, { display_name, avatar }) {
       const { error } = await sb.from('profiles').upsert({ id: userId, display_name, avatar });
+      if (error) fail(error);
+    },
+
+    // 'instant', 'daily', 'weekly' or 'off'. See supabase/functions/notify-notes.
+    async saveNotify(userId, notify) {
+      const { error } = await sb.from('profiles').update({ notify }).eq('id', userId);
       if (error) fail(error);
     },
 
@@ -143,7 +149,7 @@ function supabaseBackend(sb) {
       const [g, m, t, v] = await Promise.all([
         sb.from('groups').select('id, name, town_name, accent, invite_code, created_by, created_at').eq('id', groupId).single(),
         sb.from('memberships').select('user_id, joined_at, left_at').eq('group_id', groupId),
-        sb.from('thanks').select('id, author_id, recipient_id, recipient_name, body, day, created_at').eq('group_id', groupId).order('created_at'),
+        sb.from('thanks').select('id, author_id, recipient_id, recipient_name, body, day, created_at, deleted_at').eq('group_id', groupId).order('created_at'),
         sb.from('visits').select('user_id, day').eq('group_id', groupId)
       ]);
       for (const r of [g, m, t, v]) if (r.error) fail(r.error);
@@ -161,6 +167,12 @@ function supabaseBackend(sb) {
         if (error.code === '23505') throw new Error(DAILY_LIMIT);
         fail(error);
       }
+    },
+
+    // Erases a note's words for everyone; it still counts toward the town. See delete_note().
+    async deleteNote(noteId) {
+      const { error } = await sb.rpc('delete_note', { p_note: noteId });
+      if (error) fail(error);
     },
 
     async recordVisit(groupId, day, personId) {
@@ -259,12 +271,18 @@ function demoBackend() {
     async getProfile(userId) {
       const p = load().profiles[userId];
       // Demo mode has no administrator: everyone is approved unless a test sets approved: false.
-      return p ? { id: userId, ...p, approved: p.approved !== false } : null;
+      return p ? { id: userId, notify: 'off', ...p, approved: p.approved !== false } : null;
     },
 
     async saveProfile(userId, { display_name, avatar }) {
       const db = load();
       db.profiles[userId] = { ...db.profiles[userId], display_name, avatar, account_id: userId, is_kid: false, created_at: db.profiles[userId]?.created_at ?? new Date().toISOString() };
+      save(db);
+    },
+
+    async saveNotify(userId, notify) {
+      const db = load();
+      db.profiles[userId].notify = notify;
       save(db);
     },
 
@@ -371,6 +389,16 @@ function demoBackend() {
         throw new Error(DAILY_LIMIT);
       }
       db.thanks.push({ id: uuid(), ...row, created_at: new Date().toISOString() });
+      save(db);
+    },
+
+    async deleteNote(noteId) {
+      const db = load();
+      const note = db.thanks.find((t) => t.id === noteId);
+      if (!note || !controls(db, note.author_id)) throw new Error('You can only delete your own notes.');
+      note.body = null;
+      note.deleted_at = new Date().toISOString();
+      if (!note.recipient_id) note.recipient_name = 'Someone outside the group';
       save(db);
     },
 

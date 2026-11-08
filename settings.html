@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Settings · My Small Town</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F3F0FF">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Small Town">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  .choices { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .choice { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; min-height: 44px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+  .choice:has(input:checked) { border: 2px solid var(--ink); background: var(--sun-tint); }
+  .choice input { width: 22px; height: 22px; margin: 1px 0 0; flex-shrink: 0; accent-color: var(--ink); }
+  .choice .label { font-size: 15px; font-weight: 700; }
+  .choice .hint { font-size: 13px; color: var(--muted); line-height: 1.4; }
+  .my-note .body { margin: 0; font-size: 15px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header app-header--back">
+    <a class="icon-btn" href="groups.html" aria-label="Back to your groups">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+    </a>
+    <h1 class="page-title page-title--sm">Settings</h1>
+  </header>
+
+  <main class="app-main app-main--loose" id="main" style="padding-top: 8px"><p class="note">Loading…</p></main>
+</div>
+<script src="js/app.js"></script>
+<script type="module">
+  import { boot, api, showError, toast } from './js/ui.js';
+  import { esc, relativeDay, shortDate } from './js/util.js';
+
+  const main = document.getElementById('main');
+  const CHOICES = [
+    ['instant', "As they're shared", 'An email each time someone in your groups shares a note.'],
+    ['daily', 'Daily summary', 'One email each evening with the day’s notes.'],
+    ['weekly', 'Weekly summary', 'One email on Sunday evening with the week’s notes.'],
+    ['off', 'No emails', 'See new notes in the app instead.']
+  ];
+
+  try {
+    const { user, profile, person, group, data, today } = await boot({ needGroup: false });
+    const current = profile.notify || 'off';
+    const mine = group ? data.thanks.filter((t) => t.author_id === person.id && !t.deleted_at).reverse() : [];
+    const whose = person.is_kid ? `${esc(person.display_name)}'s notes` : 'Your notes';
+
+    main.innerHTML = `
+      <section class="stack stack-10" aria-labelledby="email-title">
+        <h2 class="section-title" id="email-title">Emails about new notes</h2>
+        <p class="note" style="margin: 0">Sent to ${esc(user.email || 'your email')}. Notes you or your kids share aren't included.</p>
+        <fieldset class="choices">
+          <legend class="sr-only">How often to email you</legend>
+          ${CHOICES.map(([value, label, hint]) => `
+            <label class="choice">
+              <input type="radio" name="notify" value="${value}"${value === current ? ' checked' : ''}>
+              <span class="stack stack-2"><span class="label">${label}</span><span class="hint">${hint}</span></span>
+            </label>`).join('')}
+        </fieldset>
+      </section>
+
+      ${group ? `
+      <section class="stack stack-10" aria-labelledby="notes-title">
+        <div class="stack stack-4">
+          <h2 class="section-title" id="notes-title">${whose} in ${esc(group.name)}</h2>
+          <p class="note" style="margin: 0">Deleting a note erases its words for everyone. It still counts toward the town, and it doesn't give back a note for that day.</p>
+        </div>
+        ${mine.length ? mine.map((t) => `
+          <article class="card my-note" style="gap: 6px">
+            <div class="row" style="justify-content: space-between; align-items: baseline; gap: 10px">
+              <span class="item-title">To ${esc(t.recipient_name)}</span>
+              <span class="meta">${relativeDay(t.day, today) === shortDate(t.day) ? shortDate(t.day) : `${relativeDay(t.day, today)}, ${shortDate(t.day)}`}</span>
+            </div>
+            <p class="body">${esc(t.body)}</p>
+            <button type="button" class="link-btn" data-delete="${esc(t.id)}" style="align-self: flex-start; color: #B3261E">Delete this note</button>
+          </article>`).join('') : `<div class="empty"><span class="note">No notes shared in this group yet.</span></div>`}
+      </section>` : ''}`;
+
+    main.querySelectorAll('input[name=notify]').forEach((radio) => radio.addEventListener('change', async () => {
+      try {
+        await api.saveNotify(user.id, radio.value);
+        toast(radio.value === 'off' ? 'Emails turned off' : 'Saved');
+      } catch (e) {
+        toast(e.message);
+      }
+    }));
+
+    main.querySelectorAll('[data-delete]').forEach((btn) => btn.addEventListener('click', async () => {
+      if (!confirm('Delete this note? Its words are erased for everyone, and this can’t be undone.')) return;
+      try {
+        await api.deleteNote(btn.dataset.delete);
+        toast('Note deleted');
+        btn.closest('.my-note').remove();
+      } catch (e) {
+        toast(e.message);
+      }
+    }));
+  } catch (e) {
+    showError(main, e.message);
+  }
+</script>
+</body>
+</html>

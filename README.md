@@ -20,6 +20,7 @@ then visit http://localhost:5173.
 | --- | --- |
 | `signin.html` | Email sign-in, your name and your avatar |
 | `who.html` | Who's using the app? Switch person, add and manage kids |
+| `settings.html` | Email choices for new notes, and your notes (to delete) |
 | `index.html` | Group home (or a welcome when you have no group yet) |
 | `share.html` | Share a note of appreciation |
 | `town.html` | Your town |
@@ -42,3 +43,4 @@ then visit http://localhost:5173.
 - `supabase/schema.sql` — tables and privacy rules.
 - `supabase/migrations/` — one-time updates for a database set up from an earlier schema.
 - `supabase/functions/notify-admin/` — emails the administrator when someone signs up, and the person when they're approved.
+- `supabase/functions/notify-notes/` — emails people about new notes, instantly or as daily or weekly summaries.

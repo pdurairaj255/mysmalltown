@@ -24,6 +24,8 @@ create table public.profiles (
   -- New accounts wait until an administrator sets this to true. Kids follow
   -- their parent's approval.
   approved boolean not null default false,
+  -- Emails about new notes: each one as it's shared, a daily or weekly summary, or none.
+  notify text not null default 'off' check (notify in ('instant', 'daily', 'weekly', 'off')),
   created_at timestamptz not null default now()
 );
 
@@ -60,6 +62,8 @@ create table public.thanks (
   recipient_id uuid,
   recipient_name text not null check (char_length(recipient_name) between 1 and 80),
   body text check (char_length(body) between 1 and 1000),
+  -- Set when the author deleted the note: its words are gone, its tally stays.
+  deleted_at timestamptz,
   day date not null,
   created_at timestamptz not null default now()
 );
@@ -75,6 +79,7 @@ create table public.visits (
 create index profiles_account_idx on public.profiles (account_id);
 create index thanks_group_idx on public.thanks (group_id, day);
 create index thanks_author_day_idx on public.thanks (group_id, author_id, day);
+create index thanks_created_idx on public.thanks (group_id, created_at);
 create index visits_group_idx on public.visits (group_id, day);
 create index memberships_user_idx on public.memberships (user_id);
 
@@ -370,6 +375,30 @@ $$;
 revoke execute on function public.delete_group(uuid) from public, anon;
 grant execute on function public.delete_group(uuid) to authenticated;
 
+-- Deletes a note's words for everyone. The note still counts toward the town
+-- (and toward that day's limit), so deleting never shrinks a town or frees up
+-- a note. Only the account that wrote it (themselves or their kid) can do this.
+create or replace function public.delete_note(p_note uuid)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_approved() then
+    raise exception 'Your account is waiting for approval.';
+  end if;
+  if not exists (select 1 from thanks where id = p_note and public.controls(author_id)) then
+    raise exception 'You can only delete your own notes.';
+  end if;
+  update thanks
+  set body = null,
+      deleted_at = now(),
+      recipient_name = case when recipient_id is null then 'Someone outside the group' else recipient_name end
+  where id = p_note and deleted_at is null;
+end;
+$$;
+
+revoke execute on function public.delete_note(uuid) from public, anon;
+grant execute on function public.delete_note(uuid) to authenticated;
+
 -- ---------- Row level security ----------
 
 alter table public.profiles enable row level security;
@@ -395,7 +424,7 @@ create policy "Edit your own and your kids' profiles" on public.profiles
 -- every row tied to your account.
 revoke insert, update on public.profiles from authenticated;
 grant insert (id, display_name, avatar) on public.profiles to authenticated;
-grant update (id, display_name, avatar) on public.profiles to authenticated;
+grant update (id, display_name, avatar, notify) on public.profiles to authenticated;
 
 drop policy if exists "See your groups" on public.groups;
 create policy "See your groups" on public.groups

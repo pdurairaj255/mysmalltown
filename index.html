@@ -52,7 +52,7 @@
 </div>
 <script src="js/app.js"></script>
 <script type="module">
-  import { boot, avatar, tintOf, showError } from './js/ui.js';
+  import { boot, api, avatar, tintOf, showError } from './js/ui.js';
   import { renderScene, describeScene } from './js/town.js';
   import { esc, relativeDay, NOTES_PER_DAY } from './js/util.js';
 
@@ -96,7 +96,7 @@
       const sharedToday = data.thanks.filter((t) => t.author_id === me.user_id && t.day === today).length;
       const notesLeft = NOTES_PER_DAY - sharedToday;
       const lastWeek = town.completed[town.completed.length - 1];
-      const feed = [...town.current.thanks].reverse();
+      const feed = town.current.thanks.filter((t) => !t.deleted_at).reverse();
 
       main.innerHTML = `
         <a class="town-card" href="town.html" aria-label="Visit ${esc(group.town_name)}">
@@ -139,6 +139,7 @@
                 </div>
               </div>
               ${t.body ? `<p class="body-text">${esc(t.body)}</p>` : '<p class="note">The words of this note were removed when its author left. It still counts toward the town.</p>'}
+              ${t.body && t.author_id === me.user_id ? `<button type="button" class="link-btn" data-delete-note="${esc(t.id)}" style="align-self: flex-start; min-height: 32px; padding: 0; font-size: 13px">Delete</button>` : ''}
             </article>`;
           }).join('') : `
             <div class="empty">
@@ -147,6 +148,15 @@
             </div>`}
         </section>`;
     }
+    main.querySelectorAll('[data-delete-note]').forEach((btn) => btn.addEventListener('click', async () => {
+      if (!confirm('Delete this note? Its words are erased for everyone, and this can\u2019t be undone. It still counts toward the town.')) return;
+      try {
+        await api.deleteNote(btn.dataset.deleteNote);
+        btn.closest('.thanks').remove();
+      } catch (ex) {
+        alert(ex.message);
+      }
+    }));
   } catch (e) {
     showError(main, e.message);
   }
