@@ -24,7 +24,7 @@ then visit http://localhost:5173.
 | `index.html` | Group home (or a welcome when you have no group yet) |
 | `share.html` | Share a note of appreciation |
 | `town.html` | Your town |
-| `recap.html` | Sunday recap |
+| `recap.html` | Sunday recap, and each past week's notes (from the day you joined) |
 | `stats.html` | Stats |
 | `groups.html` | Your groups |
 | `new-group.html` | Start a new group |

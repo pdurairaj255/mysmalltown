@@ -21,6 +21,12 @@
   .past button { border: 0; padding: 0; background: transparent; cursor: pointer; display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; }
   .past button[aria-current="true"] { font-weight: 800; }
   .past svg { width: 100%; height: auto; display: block; border-radius: 12px; border: 2px solid var(--ink); box-sizing: border-box; }
+  .week-notes > summary { list-style: none; display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+  .week-notes > summary::-webkit-details-marker { display: none; }
+  .week-notes[open] > summary { margin-bottom: 12px; }
+  .week-notes .count { font-size: 13px; font-weight: 700; background: var(--sun-tint); border-radius: 999px; padding: 2px 9px; }
+  .week-notes .chev { margin-left: auto; flex-shrink: 0; transition: transform 0.2s; }
+  .week-notes[open] .chev { transform: rotate(180deg); }
 </style>
 </head>
 <body>
@@ -36,9 +42,9 @@
 </div>
 <script src="js/app.js"></script>
 <script type="module">
-  import { boot, showError, toast } from './js/ui.js';
+  import { boot, noteCard, showError, toast } from './js/ui.js';
   import { renderScene, describeScene, sceneState, weekChanges } from './js/town.js';
-  import { esc, shortDate } from './js/util.js';
+  import { esc, shortDate, dayKey, parseDay } from './js/util.js';
   import { addTownZoom } from './js/townview.js';
 
   const main = document.getElementById('main');
@@ -46,7 +52,7 @@
   const lamp = '<div class="icon-tile bg-ink" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFD23F" stroke-width="2.4" stroke-linecap="round"><path d="M12 22V11"/><circle cx="12" cy="7" r="4" fill="#FFD23F"/></svg></div>';
 
   try {
-    const { group, town } = await boot();
+    const { group, town, data, me } = await boot();
     document.getElementById('eyebrow').textContent = group.name;
     const done = town.completed;
 
@@ -62,6 +68,27 @@
     } else {
       let week = done[done.length - 1];
       let view = 'after';
+      let notesOpen = false;
+      let showAllWeeks = false;
+      // Each person sees notes from the day they joined the group on.
+      const joinedDay = dayKey(me.joined_at);
+      const memberOf = (id) => data.members.find((m) => m.user_id === id);
+      const dateOf = (day) => parseDay(day).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      const chevron = '<svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+
+      const weekNotes = () => {
+        if (week.end < joinedDay) return `<p class="note center">This week was before you joined, so its notes aren't shown.</p>`;
+        const notes = week.thanks.filter((t) => !t.deleted_at && t.day >= joinedDay);
+        return `
+          <details class="week-notes"${notesOpen ? ' open' : ''}>
+            <summary><span class="section-title">Notes of appreciation</span><span class="count">${notes.length}</span>${chevron}</summary>
+            <div class="stack stack-12">
+              ${notes.length
+                ? notes.map((t) => noteCard(t, { author: memberOf(t.author_id), me, when: dateOf(t.day) })).join('')
+                : '<div class="empty"><span class="note">No notes of appreciation were shared this week.</span></div>'}
+            </div>
+          </details>`;
+      };
 
       const render = () => {
         const after = sceneState(town, week);
@@ -84,6 +111,8 @@
               </div>`).join('')}
           </section>
 
+          ${weekNotes()}
+
           <div class="row" style="gap: 10px">
             <button type="button" class="btn btn--md" id="save">Save as image</button>
             <button type="button" class="btn btn--md btn--outline" id="send">Send to family</button>
@@ -91,14 +120,18 @@
 
           ${done.length > 1 ? `
           <section class="stack stack-10" aria-label="Past Sundays">
-            <h2 class="section-title">Past Sundays</h2>
+            <div class="stack stack-4">
+              <h2 class="section-title">Past Sundays</h2>
+              <p class="note" style="margin: 0">Tap a week to see its town and its notes.</p>
+            </div>
             <div class="past">
-              ${[...done].reverse().slice(0, 9).map((w) => `
+              ${[...done].reverse().slice(0, showAllWeeks ? undefined : 9).map((w) => `
                 <button type="button" data-week="${w.index}" aria-label="Week ${w.number}, ending ${shortDate(w.end)}"${w === week ? ' aria-current="true"' : ''}>
                   ${renderScene(sceneState(town, w), { labels: false })}
                   ${shortDate(w.end)}
                 </button>`).join('')}
             </div>
+            ${done.length > 9 && !showAllWeeks ? `<button type="button" class="btn btn--md btn--outline" id="all-weeks">Show all ${done.length} weeks</button>` : ''}
           </section>` : ''}`;
 
         addTownZoom(document.getElementById('scene'), () => (view === 'before'
@@ -111,6 +144,8 @@
           render();
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }));
+        main.querySelector('.week-notes')?.addEventListener('toggle', (e) => { notesOpen = e.target.open; });
+        document.getElementById('all-weeks')?.addEventListener('click', () => { showAllWeeks = true; render(); });
         document.getElementById('save').addEventListener('click', () => saveImage(after, before));
         document.getElementById('send').addEventListener('click', () => send(changes));
       };

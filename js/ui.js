@@ -43,6 +43,24 @@ export function setActivePerson(id) {
 }
 
 // Every avatar as a radio button, grouped by age. name: the radio group name.
+// One note of appreciation, tinted with its author's avatar color.
+// author: the member who wrote it (missing for former members). when: the date label.
+export function noteCard(t, { author, me, when, canDelete = false }) {
+  author = author || { name: 'A former member' };
+  return `
+    <article class="thanks" style="background: ${tintOf(author.avatar)}">
+      <div class="row" style="gap: 10px">
+        ${avatar(author)}
+        <div class="stack stack-4">
+          <p class="who"><strong>${esc(author.user_id === me.user_id ? 'You' : author.name)}</strong> appreciated <strong>${esc(t.recipient_id === me.user_id ? 'you' : t.recipient_name)}</strong> · ${esc(when)}</p>
+          ${t.recipient_id ? '' : '<span class="badge">Outside the group</span>'}
+        </div>
+      </div>
+      ${t.body ? `<p class="body-text">${esc(t.body)}</p>` : '<p class="note">The words of this note were removed when its author left. It still counts toward the town.</p>'}
+      ${canDelete && t.body && t.author_id === me.user_id ? `<button type="button" class="link-btn" data-delete-note="${esc(t.id)}" style="align-self: flex-start; min-height: 32px; padding: 0; font-size: 13px">Delete</button>` : ''}
+    </article>`;
+}
+
 export function avatarPicker(name = 'avatar') {
   return AGE_GROUPS.map((age) => `
     <fieldset class="avatar-group">
