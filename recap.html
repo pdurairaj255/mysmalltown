@@ -71,6 +71,7 @@
       let notesOpen = false;
       let showAllWeeks = false;
       // Each person sees notes from the day they joined the group on.
+      const joinedAt = new Date(me.joined_at);
       const joinedDay = dayKey(me.joined_at);
       const memberOf = (id) => data.members.find((m) => m.user_id === id);
       const dateOf = (day) => parseDay(day).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
@@ -78,7 +79,8 @@
 
       const weekNotes = () => {
         if (week.end < joinedDay) return `<p class="note center">This week was before you joined, so its notes aren't shown.</p>`;
-        const notes = week.thanks.filter((t) => !t.deleted_at && t.day >= joinedDay);
+        // hidden: from before this account joined. The time check covers a kid who joined later.
+        const notes = week.thanks.filter((t) => !t.deleted_at && !t.hidden && new Date(t.created_at) >= joinedAt);
         return `
           <details class="week-notes"${notesOpen ? ' open' : ''}>
             <summary><span class="section-title">Notes of appreciation</span><span class="count">${notes.length}</span>${chevron}</summary>

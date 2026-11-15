@@ -272,7 +272,7 @@ export function computeTown({ group, members, formerMembers = [], thanks, visits
     w.cleanup = w.surprises.some((x) => x.kind === 'cleanup');
     // People can share several notes a day, but growth counts each person once
     // a day: at most one visitor per person per day.
-    w.outsiders = onePerDay(w.thanks.filter((t) => !t.recipient_id), (t) => t.author_id);
+    w.outsiders = onePerDay(w.thanks.filter((t) => t.outside ?? !t.recipient_id), (t) => t.author_id);
     w.before = { pieces, extras, surprises: surprises.length };
     surprises.push(...w.surprises);
     if (w.complete) {
@@ -320,6 +320,9 @@ export function sceneState(town, week, { before = false } = {}) {
 
 const nameOf = (town, id) => town.everyone.find((m) => m.user_id === id)?.name ?? 'A former member';
 
+// Who a note was for, unless it's from before you joined (then that's kept back).
+const forWhom = (t) => (t.hidden || !t.recipient_name ? '' : ` for ${t.recipient_name}`);
+
 // What changed in a finished week, for the Sunday recap.
 export function weekChanges(town, week) {
   const items = [];
@@ -329,7 +332,7 @@ export function weekChanges(town, week) {
       kind: 'build',
       title: pieceInfo(week.newPiece).phrase,
       detail: `${week.sharers.size} of ${week.members.length} shared a note of appreciation, meeting the goal of ${week.goal}` +
-        (credit ? `. Last one: ${possessive(nameOf(town, credit.author_id))} note of appreciation for ${credit.recipient_name}` : '')
+        (credit ? `. Last one: ${possessive(nameOf(town, credit.author_id))} note of appreciation${forWhom(credit)}` : '')
     });
   } else if (week.newExtra !== undefined) {
     items.push({
@@ -342,7 +345,7 @@ export function weekChanges(town, week) {
     items.push({ kind: x.kind, title: surpriseTitle(x), detail: surpriseDetail(x, nameOf(town, x.user_id)) });
   }
   for (const t of week.outsiders) {
-    items.push({ kind: 'visitor', title: 'A traveler passed through town', detail: `From ${possessive(nameOf(town, t.author_id))} note of appreciation for ${t.recipient_name}` });
+    items.push({ kind: 'visitor', title: 'A traveler passed through town', detail: `From ${possessive(nameOf(town, t.author_id))} note of appreciation${forWhom(t)}` });
   }
   return items;
 }
@@ -360,7 +363,7 @@ function buildNews(town) {
     for (const x of w.surprises) {
       news.push({ day: x.day, kind: x.kind, member: town.members.find((m) => m.user_id === x.user_id), text: `${surpriseTitle(x).replace(/[.!]$/, '')}, thanks to ${possessive(nameOf(town, x.user_id))} visits.` });
     }
-    for (const t of w.outsiders) news.push({ day: t.day, kind: 'visitor', text: `A traveler arrived, thanks to ${possessive(nameOf(town, t.author_id))} note of appreciation for ${t.recipient_name}.` });
+    for (const t of w.outsiders) news.push({ day: t.day, kind: 'visitor', text: `A traveler arrived, thanks to ${possessive(nameOf(town, t.author_id))} note of appreciation${forWhom(t)}.` });
   }
   return news.sort((a, b) => b.day.localeCompare(a.day));
 }

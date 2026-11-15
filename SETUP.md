@@ -24,6 +24,7 @@ This creates the tables and the privacy rules: people can only see groups they b
 > 4. [`supabase/migrations/005_three_notes_a_day.sql`](supabase/migrations/005_three_notes_a_day.sql): up to 3 notes of appreciation per day.
 > 5. [`supabase/migrations/006_delete_town.sql`](supabase/migrations/006_delete_town.sql): lets a group's owner delete its town.
 > 6. [`supabase/migrations/007_note_deletion_and_emails.sql`](supabase/migrations/007_note_deletion_and_emails.sql): deleting your own notes, and email choices for new notes.
+> 7. [`supabase/migrations/008_notes_from_when_you_joined.sql`](supabase/migrations/008_notes_from_when_you_joined.sql): people only receive the notes shared since they joined; earlier ones stay on the server.
 
 ## 3. Set up sign-in emails
 

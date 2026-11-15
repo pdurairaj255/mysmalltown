@@ -91,7 +91,7 @@
       const sharedToday = data.thanks.filter((t) => t.author_id === me.user_id && t.day === today).length;
       const notesLeft = NOTES_PER_DAY - sharedToday;
       const lastWeek = town.completed[town.completed.length - 1];
-      const feed = town.current.thanks.filter((t) => !t.deleted_at).reverse();
+      const feed = town.current.thanks.filter((t) => !t.deleted_at && !t.hidden).reverse();
 
       main.innerHTML = `
         <a class="town-card" href="town.html" aria-label="Visit ${esc(group.town_name)}">

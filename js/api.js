@@ -29,6 +29,10 @@ function splitMembers(rows, profileOf) {
   return { members, formerMembers };
 }
 
+// Every note row gets outside (for someone outside the group) and hidden (from
+// before the viewer joined, so its words and recipient were kept back).
+const withFlags = (t) => ({ ...t, outside: t.outside ?? !t.recipient_id, hidden: !!t.hidden });
+
 const DAILY_LIMIT = `You've already shared ${NOTES_PER_DAY} notes of appreciation today in this group.`;
 const NEEDS_007 = 'This needs a database update first: run supabase/migrations/007_note_deletion_and_emails.sql in Supabase (see SETUP.md).';
 // True when a query failed only because the database is missing a newer column.
@@ -156,17 +160,21 @@ function supabaseBackend(sb) {
       let [g, m, t, v] = await Promise.all([
         sb.from('groups').select('id, name, town_name, accent, invite_code, created_by, created_at').eq('id', groupId).single(),
         sb.from('memberships').select('user_id, joined_at, left_at').eq('group_id', groupId),
-        notes('id, author_id, recipient_id, recipient_name, body, day, created_at, deleted_at'),
+        // Notes from before you joined come back without their words. See group_notes().
+        sb.rpc('group_notes', { p_group: groupId }),
         sb.from('visits').select('user_id, day').eq('group_id', groupId)
       ]);
-      // Before update 007 the deleted_at column doesn't exist yet: carry on without it.
-      if (missingColumn(t.error)) t = await notes('id, author_id, recipient_id, recipient_name, body, day, created_at');
+      // Before updates 007 and 008, read the notes table directly.
+      if (t.error && (t.error.code === 'PGRST202' || /group_notes/.test(t.error.message || ''))) {
+        t = await notes('id, author_id, recipient_id, recipient_name, body, day, created_at, deleted_at');
+        if (missingColumn(t.error)) t = await notes('id, author_id, recipient_id, recipient_name, body, day, created_at');
+      }
       for (const r of [g, m, t, v]) if (r.error) fail(r.error);
       const ids = m.data.filter((r) => !r.left_at).map((r) => r.user_id);
       const p = await sb.from('profiles').select('id, display_name, avatar, is_kid').in('id', ids);
       if (p.error) fail(p.error);
       const byId = new Map(p.data.map((row) => [row.id, row]));
-      return { group: g.data, ...splitMembers(m.data, (id) => byId.get(id)), thanks: t.data, visits: v.data };
+      return { group: g.data, ...splitMembers(m.data, (id) => byId.get(id)), thanks: t.data.map(withFlags), visits: v.data };
     },
 
     // row.author_id is the person sharing (the grown-up or one of their kids).
@@ -380,12 +388,20 @@ function demoBackend() {
       save(db);
     },
 
+    // Mirrors group_notes() in supabase/schema.sql: notes from before this
+    // account first joined the group come back without their words.
     async loadGroup(groupId) {
       const db = load();
+      const joined = db.memberships
+        .filter((m) => m.group_id === groupId && !m.left_at && controls(db, m.user_id))
+        .map((m) => m.joined_at).sort()[0] ?? '';
       return {
         group: db.groups.find((g) => g.id === groupId),
         ...splitMembers(db.memberships.filter((m) => m.group_id === groupId), (id) => db.profiles[id]),
-        thanks: db.thanks.filter((t) => t.group_id === groupId).sort((a, b) => a.created_at.localeCompare(b.created_at)),
+        thanks: db.thanks.filter((t) => t.group_id === groupId).sort((a, b) => a.created_at.localeCompare(b.created_at))
+          .map((t) => t.created_at < joined
+            ? withFlags({ ...t, recipient_id: null, recipient_name: null, body: null, outside: !t.recipient_id, hidden: true })
+            : withFlags(t)),
         visits: db.visits.filter((v) => v.group_id === groupId)
       };
     },

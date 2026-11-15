@@ -114,6 +114,19 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
+-- When the signed-in account first joined this group: the earliest of the
+-- grown-up's and their kids' current memberships.
+create or replace function public.my_joined_at(gid uuid) returns timestamptz
+language sql stable security definer set search_path = public as $$
+  select min(m.joined_at)
+  from memberships m
+  join profiles p on p.id = m.user_id
+  where m.group_id = gid and p.account_id = auth.uid() and m.left_at is null;
+$$;
+
+-- Signed-out visitors can call it too (it's part of the notes rule) and always get nothing.
+grant execute on function public.my_joined_at(uuid) to anon, authenticated;
+
 create or replace function public.shares_group(other uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select public.is_approved() and exists (
@@ -355,6 +368,30 @@ drop trigger if exists limit_daily_notes on public.thanks;
 create trigger limit_daily_notes before insert on public.thanks
   for each row execute function public.limit_daily_notes();
 
+-- Every note in a group, for growing its town. Notes from before you joined
+-- come back with hidden = true and no recipient, recipient name or words.
+create or replace function public.group_notes(p_group uuid)
+returns table (
+  id uuid, author_id uuid, recipient_id uuid, recipient_name text, body text,
+  day date, created_at timestamptz, deleted_at timestamptz, outside boolean, hidden boolean
+)
+language sql stable security definer set search_path = public as $$
+  with j as (select public.my_joined_at(p_group) as at)
+  select t.id, t.author_id,
+         case when t.created_at < j.at then null else t.recipient_id end,
+         case when t.created_at < j.at then null else t.recipient_name end,
+         case when t.created_at < j.at then null else t.body end,
+         t.day, t.created_at, t.deleted_at,
+         t.recipient_id is null,
+         t.created_at < j.at
+  from thanks t, j
+  where t.group_id = p_group and public.is_member(p_group)
+  order by t.created_at;
+$$;
+
+revoke execute on function public.group_notes(uuid) from public, anon;
+grant execute on function public.group_notes(uuid) to authenticated;
+
 -- Deletes a group and its town for everyone: memberships, notes and visits go
 -- with it. Only the account that owns the group can do this. People's accounts
 -- and their other towns aren't touched.
@@ -442,8 +479,9 @@ create policy "See who is in your groups" on public.memberships
 
 drop policy if exists "Read your groups' notes" on public.thanks;
 drop policy if exists "Read your groups' thank-yous" on public.thanks;
+-- Only notes from since you joined; group_notes() gives the town what it needs from earlier ones.
 create policy "Read your groups' notes" on public.thanks
-  for select using (public.is_member(group_id));
+  for select using (public.is_member(group_id) and created_at >= public.my_joined_at(group_id));
 drop policy if exists "Share your own note" on public.thanks;
 drop policy if exists "Share your own thank-you" on public.thanks;
 create policy "Share your own note" on public.thanks
